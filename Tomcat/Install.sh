@@ -26,8 +26,20 @@ sudo chown -R $TOMCAT_USER:$TOMCAT_USER $TOMCAT_HOME
 
 echo "==> Configuring tomcat-users.xml..."
 sudo tee $TOMCAT_HOME/conf/tomcat-users.xml > /dev/null <<EOF
-<tomcat-users>
-    <user username="${TOMCAT_USER}" password="${TOMCAT_PASS}" roles="manager-gui,manager-script,manager-jmx,manager-status"/>
+<?xml version="1.0" encoding="UTF-8"?>
+<tomcat-users xmlns="http://tomcat.apache.org/xml"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://tomcat.apache.org/xml tomcat-users.xsd"
+              version="1.0">
+
+  <!-- Define Roles -->
+  <role rolename="manager-gui"/>
+  <role rolename="manager-script"/>
+  <role rolename="manager-jmx"/>
+  <role rolename="manager-status"/>
+
+  <!-- Define User -->
+  <user username="admin" password="vibishnathan" roles="manager-gui,manager-script,manager-jmx,manager-status"/>
 </tomcat-users>
 EOF
 
