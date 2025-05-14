@@ -1,0 +1,92 @@
+Test
+
+Gitops
+Argo CD
+Argo CD is not a CI Tool
+Push Vs Pull Model --> Argo is Pull based will have controller in it 
+Traditional Push based CD on K8s
+Limitation and Disadvantages of Above
+
+ArgoCD Where Fits Here?
+Git Config repo will tracked 
+State Visibility
+
+
+Argo CD Terms:
+
+
+Application
+-> Source and destination to deploy
+	. Source k8s Manif
+	. Dest cluster and Namespace details
+-> Argo CD supported Application source tools
+
+Projects: Logical grouping of applications
+ Enforce RBAC , Allowed resource access fine grain
+
+
+Desired State vs Actual State
+Sync
+Refresh and Compare -- Every 3 mins By default
+
+
+Architecture of Argo CD: SS
+	• 3 Core Componets
+		○ Argo CD Server Api and web server(Grpc / Rest expose Api web and cli, management operations cluster control and authtications)
+		○ Repo server(Internal Server cloning git repo and cloning and creating k8s manifest. What is manifest?)
+		○ Application controller( Controller to manage the deployed apps and presync postsync etc na d)
+	• Redis used for caching
+	• Dex - Identity service responsible for integrating with external ID Providers
+	• Application set Controller: It automates and generate the Argo CD Applications Components.
+
+Argo CD:
+
+Installation : (SS)
+	• Non Highly available
+	• Highly available 
+	• Light Instllation without UI
+	
+Privilages:
+
+	Cluster Admin --> Across Cluter we can use Argo to Deploy
+	Namespace Privilages 
+
+YAML Manifest way, Helm Charts or with kustomize
+
+
+NHA --> Installation --> Getting Password --> By default is not exposed 
+	Service : LB to expose Web UI
+	Ingress Controller : If we are using ngress Controller
+	Port-forward :for access on local machine
+	
+Argo CD Acccess Methods: CLI, Web UI and API
+
+	USING CLI --> Mange apps repos clusters task etc
+	Can be installed to any platform
+	Argocd login --> CMD
+	Then Further CMD can be used
+
+
+Applications : It is a K8s resource object representing a deployed applications instance in a env(GITHUB 22 handson )
+		--> Source of codes
+		--> Destination 
+	Declartive way using YAML(Sample with exlanation for each in single file)
+	WEB Ui and Cli variurs way to setup app on argo CD
+
+25 28 Handson
+
+
+
+Helm Options on Argo CD:(31 SS, 32 Demo)
+
+	Relaease name , values file, Params, File param, valus as block File
+	Directory File options (34 ss abd 35 Demo)
+
+Kustomize(37 SS and 38 Demo)
+
+	Name Prefix ,Suffix ,override ,images ,Common label
+	
+ Multiple source for applications: Grouping multiple source Helm repo/Git repo(40 SS and )
+	Charts with sources tag in Yaml, Custom values from Git and static from Helm
+	
+
