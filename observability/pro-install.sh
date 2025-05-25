@@ -10,8 +10,8 @@ curl -s https://api.github.com/repos/prometheus/prometheus/releases/latest \
 | grep linux-amd64.tar.gz \
 | cut -d '"' -f 4 \
 | wget -qi -
-tar -xvf prometheus-*-linux-amd64.tar.gz
-cd prometheus-*-linux-amd64
+tar -xvf prometheus-*
+cd prometheus-*
 cp prometheus promtool /usr/local/bin/
 cp -r consoles console_libraries /etc/prometheus/
 cp prometheus.yml /etc/prometheus/
