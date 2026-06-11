@@ -1,0 +1,5 @@
+# This directory is a Syncthing folder marker.
+# Do not delete.
+
+folderID: sc6su-omzmx
+created: 2026-03-24T01:15:31+05:30
