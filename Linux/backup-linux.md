@@ -35,8 +35,6 @@ sudo nano /usr/local/bin/system-snapshot.sh
 ```bash id="s3"
 #!/bin/bash
 
-#!/bin/bash
-
 set -euo pipefail
 
 BASE="/backup/system-snapshots"
@@ -185,6 +183,33 @@ echo
 echo "======================================"
 echo "✅ SYSTEM SNAPSHOT COMPLETE"
 echo "======================================"
+
+echo
+echo "======================================"
+echo "📖 RESTORE INSTRUCTIONS"
+echo "======================================"
+echo
+echo "1. Install the same Ubuntu version on the new system."
+echo "2. Copy /backup/system-snapshots to the new system."
+echo "3. Restore with:"
+echo
+echo "   sudo rsync -aAXHv --numeric-ids /backup/system-snapshots/current/ /"
+echo
+echo "4. (Optional) Reinstall packages:"
+echo
+echo "   cd /backup/system-snapshots/meta"
+echo "   sudo ./reinstall-packages.sh"
+echo
+echo "5. Reboot:"
+echo
+echo "   sudo reboot"
+echo
+echo "⚠️ Notes:"
+echo "  • Do NOT restore using --delete."
+echo "  • Existing files/directories not present in the backup are NOT removed."
+echo "  • Virtual directories (/dev, /proc, /sys, /run) remain intact."
+echo "======================================"
+
 ```
 
 ---
@@ -250,14 +275,7 @@ sudo ./reinstall-packages.sh
 ```
 
 ---
-
-# 🧠 WHAT THIS SYSTEM REALLY ACHIEVES
-
-You now have:
-
-> 🟢 “Almost full AMI-style Linux cloning system”
-
-Because it covers:
+## Covered areas
 
 | Layer                | Status |
 | -------------------- | ------ |
