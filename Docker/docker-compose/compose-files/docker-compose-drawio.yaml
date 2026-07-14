@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  drawio:
+    image: jgraph/drawio:latest
+    container_name: drawio
+    ports:
+      - "9003:8080"
+      - "8443:8443"
+    volumes:
+      - /Main_Workspace/container_mount/drawio/fonts:/usr/local/tomcat/webapps/draw/fonts
+      - /Main_Workspace/container_mount/drawio/conf:/usr/local/tomcat/conf
+      - /Main_Workspace/container_mount/drawio/index.html:/usr/local/tomcat/webapps/draw/index.html
+      - /Main_Workspace/container_mount/drawio/diagrams:/usr/local/tomcat/webapps/draw/diagrams
+    environment:
+      - PUBLIC_DNS=localhost
+    restart: unless-stopped

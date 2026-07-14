@@ -1,0 +1,11 @@
+version: "3.8"
+
+services:
+  tldraw:
+    image: foxxmd/tldraw:latest
+    container_name: tldraw_app
+    ports:
+      - "9002:5858"
+    volumes:
+      - /Main_Workspace/container_mount/tldrew:/data
+    restart: unless-stopped
