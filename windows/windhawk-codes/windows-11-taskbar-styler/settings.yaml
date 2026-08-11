@@ -1,0 +1,11 @@
+theme: WindowGlass
+styleConstants:
+  - ""
+controlStyles:
+  - target: ""
+    styles:
+      - ""
+themeResourceVariables:
+  - ""
+clickThroughTaskbar: 1
+xamlDiagnosticsHandling: alert

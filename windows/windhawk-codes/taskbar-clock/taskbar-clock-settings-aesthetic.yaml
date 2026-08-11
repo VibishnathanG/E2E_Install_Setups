@@ -1,0 +1,184 @@
+ShowSeconds: 0
+TimeFormat: hh':'mm' 'tt
+DateFormat: ddd' 'dd' 'MMM yyyy
+DateLocale: ""
+WeekdayFormat: dddd
+WeekdayFormatCustom: Sun, Mon, Tue, Wed, Thu, Fri, Sat
+TopLine: |
+  ⌬ %cpu%%%bar:cpu:4:pill%  ◫  %ram%%%bar:ram:4:pill% ⛭ %gpu%%%bar:gpu:4:pill% 
+  🕒 %time% • 📅 %date% • ≋ %cpu_temp%
+BottomLine: ""
+MiddleLine: ""
+TooltipLine: |
+  ╌╌╌  S Y S T E M  ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+  ⚡ CPU          %cpu%%     %bar:cpu:10:pill%
+  🧠 Memory   %ram%%    %bar:ram:8:pill%   %ram_used%/%ram_total% GB
+  🌡 Temp        %cpu_temp%
+  🎮 GPU          %gpu%%    %bar:gpu:10:pill%
+  🎴 VRAM       %vram%%     %bar:vram:8:pill%   %vram_used%/%vram_total% GB
+
+  ╌╌╌  S T O R A G E   &   N E T W O R K  ╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+  📖 Read         %disk_read%
+  ✍ Write           %disk_write%
+  ⬇ Download    %download_speed%
+  ⬆ Upload         %upload_speed%
+
+  ╌╌╌  N O W   P L A Y I N G  ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+  🎵 %media_title%
+  👤 %media_artist%
+
+  ╌╌╌  T O D A Y  ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+  Weather ➜ %weather%
+  📅 %date%, 🕒 %time%
+
+  ╌╌╌  T E C H   P U L S E  ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+  🤖 AI        ➜ %web1%   【🧠 MarkTechPost】 
+
+  🐧 Linux    ➜ %web2%   【🐧 Phoronix】
+
+  ☁ Cloud    ➜ %web3%   【☁ AWS】
+
+  ⚙ DevOps  ➜ %web4%   【☸ Kubernetes】
+
+  🛡 Security  ➜ %web5%   【🛡 THN】
+  ✦ ·∞ ┄┅┄╾┄╾ ❖ ═════ ❂ ✧ ❂ ═════ ❖ ╼┄┅┄┄╾ ∞· ✦
+TooltipLineMode: replace
+Width: 310
+Height: 48
+MaxWidth: 0
+TextSpacing: -14
+DataCollection:
+  NetworkMetricsFormat: mbs
+  NetworkMetricsFixedDecimals: -1
+  DiskMetricsFormat: sameAsNetwork
+  DiskMetricsFixedDecimals: -1
+  PercentageFormat: zeroPadding
+  UpdateInterval: 1
+  NetworkAdapterName: ""
+  GpuAdapterName: ""
+MediaPlayer:
+  IgnoredPlayers:
+    - ""
+  MaxLength: 40
+  MediaInfoFormat: "%media_title%"
+  NoMediaText: Nothing playing
+  RemoveBrackets: 1
+WebContentWeatherLocation: ""
+WebContentWeatherFormat: "%c 🌡️%t 🌬️%w"
+WebContentWeatherUnits: autoDetect
+WebContentsItems:
+  - Url: https://www.marktechpost.com/feed/
+    BlockStart: <item>
+    Start: <title>
+    End: </title>
+    ContentMode: firstMatch
+    SearchReplace:
+      - Search: <![CDATA[
+        Replace: ""
+      - Search: "]]>"
+        Replace: ""
+      - Search: "&amp;"
+        Replace: "&"
+      - Search: "&#39;"
+        Replace: "'"
+    MaxLength: 55
+  - Url: https://www.phoronix.com/rss.php
+    BlockStart: <item>
+    Start: <title>
+    End: </title>
+    ContentMode: firstMatch
+    SearchReplace:
+      - Search: <![CDATA[
+        Replace: ""
+      - Search: "]]>"
+        Replace: ""
+      - Search: "&amp;"
+        Replace: "&"
+      - Search: "&#39;"
+        Replace: "'"
+    MaxLength: 55
+  - Url: https://aws.amazon.com/blogs/aws/feed/
+    BlockStart: <item>
+    Start: <title>
+    End: </title>
+    ContentMode: firstMatch
+    SearchReplace:
+      - Search: <![CDATA[
+        Replace: ""
+      - Search: "]]>"
+        Replace: ""
+      - Search: "&amp;"
+        Replace: "&"
+      - Search: "&#39;"
+        Replace: "'"
+    MaxLength: 55
+  - Url: https://kubernetes.io/feed.xml
+    BlockStart: <item>
+    Start: <title>
+    End: </title>
+    ContentMode: firstMatch
+    SearchReplace:
+      - Search: <![CDATA[
+        Replace: ""
+      - Search: "]]>"
+        Replace: ""
+      - Search: "&amp;"
+        Replace: "&"
+      - Search: "&#39;"
+        Replace: "'"
+    MaxLength: 55
+  - Url: https://feeds.feedburner.com/TheHackersNews
+    BlockStart: <item>
+    Start: <title>
+    End: </title>
+    ContentMode: firstMatch
+    SearchReplace:
+      - Search: <![CDATA[
+        Replace: ""
+      - Search: "]]>"
+        Replace: ""
+      - Search: "&amp;"
+        Replace: "&"
+      - Search: "&#39;"
+        Replace: "'"
+    MaxLength: 55
+WebContentsUpdateInterval: 120
+TimeZones:
+  - ""
+TimeStyle:
+  Hidden: 0
+  TextColor: "#F0F4FF"
+  TextAlignment: Center
+  FontSize: 15
+  FontFamily: Segoe UI Variable Display
+  FontWeight: SemiBold
+  FontStyle: ""
+  FontStretch: ""
+  CharacterSpacing: -4
+  LineHeight: 14
+DateStyle:
+  Hidden: 1
+  TextColor: ""
+  TextAlignment: ""
+  FontSize: 0
+  FontFamily: ""
+  FontWeight: ""
+  FontStyle: ""
+  FontStretch: ""
+  CharacterSpacing: 0
+  LineHeight: 0
+ContainerStyle:
+  Enable: 1
+  BackgroundColor: "#1d1b1b"
+  BorderColor: "#4f4f4f"
+  BorderThickness: 2
+  CornerRadius: 20
+  Height: 34
+  Width: 315
+  PaddingLeft: 1
+  PaddingTop: 0
+  PaddingRight: 1
+  PaddingBottom: 0
+  IgnoreSystemPadding: 1
+  GlassyFinish: 1
+oldTaskbarOnWin11: 0
