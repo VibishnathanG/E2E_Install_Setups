@@ -65,7 +65,7 @@ TooltipLineMode: replace
 Width: 310
 Height: 48
 MaxWidth: 0
-TextSpacing: -14
+TextSpacing: -15
 DataCollection:
   NetworkMetricsFormat: mbs
   NetworkMetricsFixedDecimals: -1
@@ -189,11 +189,11 @@ DateStyle:
 ContainerStyle:
   Enable: 1
   BackgroundColor: "#1d1b1b"
-  BorderColor: "#4f4f4f"
+  BorderColor: "#333434"
   BorderThickness: 2
   CornerRadius: 20
   Height: 34
-  Width: 315
+  Width: 320
   PaddingLeft: 1
   PaddingTop: 0
   PaddingRight: 1
