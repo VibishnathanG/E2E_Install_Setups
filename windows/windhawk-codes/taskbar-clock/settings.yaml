@@ -5,7 +5,7 @@ DateLocale: ""
 WeekdayFormat: dddd
 WeekdayFormatCustom: Sun, Mon, Tue, Wed, Thu, Fri, Sat
 TopLine: |
-  ⌬ %cpu%%%bar:cpu:4:pill%  ◫  %ram%%%bar:ram:4:pill% ⛭ %gpu%%%bar:gpu:4:pill% 
+  ⌬ %cpu%%%bar:cpu:4:pill%  ◫  %ram%%%bar:ram:2:pill% ⛭ %gpu%%%bar:gpu:4:pill% 
   🕒 %time% • 📅 %date% • ≋ %cpu_temp%
 BottomLine: ""
 MiddleLine: ""
@@ -188,12 +188,12 @@ DateStyle:
   LineHeight: 0
 ContainerStyle:
   Enable: 1
-  BackgroundColor: "#1d1b1b"
-  BorderColor: "#333434"
+  BackgroundColor: "#1c1c1c"
+  BorderColor: "#323232"
   BorderThickness: 2
   CornerRadius: 20
   Height: 34
-  Width: 320
+  Width: 300
   PaddingLeft: 1
   PaddingTop: 0
   PaddingRight: 1
