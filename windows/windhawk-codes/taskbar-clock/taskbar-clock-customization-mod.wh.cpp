@@ -600,14 +600,15 @@ using namespace std::string_view_literals;
 
 #undef GetCurrentTime
 
+#include <winrt/base.h>
 #include <winrt/Windows.Data.Xml.Dom.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.Media.Control.h>
 #include <winrt/Windows.UI.Xaml.Controls.h>
+#include <winrt/Windows.UI.Xaml.Documents.h>
 #include <winrt/Windows.UI.Xaml.Interop.h>
 #include <winrt/Windows.UI.Xaml.Markup.h>
 #include <winrt/Windows.UI.Xaml.Media.h>
-#include <winrt/base.h>
 
 using namespace winrt::Windows::UI::Xaml;
 
@@ -747,8 +748,10 @@ struct {
     int webContentsMaxLength;
 } g_settings;
 
-#define FORMATTED_BUFFER_SIZE 256
+#define FORMATTED_BUFFER_SIZE 1024
 #define INTEGER_BUFFER_SIZE sizeof("-2147483648")
+
+bool g_allowColorTags = false;
 
 enum class WinVersion {
     Unsupported,
@@ -932,6 +935,8 @@ struct ClockElementStyleData {
     DWORD styleIndex;
     std::optional<int64_t> dateVisibilityPropertyChangedToken;
     std::optional<int64_t> timeVisibilityPropertyChangedToken;
+    std::optional<int64_t> dateTextPropertyChangedToken;
+    std::optional<int64_t> timeTextPropertyChangedToken;
 };
 
 std::atomic<bool> g_clockElementStyleEnabled;
@@ -3476,33 +3481,20 @@ PCWSTR GetDiskTotalSpeedFormatted() {
 
 PCWSTR GetCpuFormatted() {
     DataCollectionSampleIfNeeded();
-    return GetMetricFormatted(g_cpuFormatted, [](PWSTR buffer,
-                                                 size_t bufferSize) {
-        if (!g_dataCollectionSession) {
-            return false;
-        }
-        std::optional<double> val =
-            g_dataCollectionSession->QueryData(MetricType::kCpu);
-        if (!val) {
-            return false;
-        }
-        // Cap to 99 to keep identical width in all cases.
-        int maxVal = 99;
-        FormatPercentValue(static_cast<int>(*val), buffer, bufferSize, maxVal);
+    return GetMetricFormatted(g_cpuFormatted, [](PWSTR buffer, size_t bufferSize) {
+        if (!g_dataCollectionSession) return false;
+        std::optional<double> val = g_dataCollectionSession->QueryData(MetricType::kCpu);
+        if (!val) return false;
+        FormatPercentValue(static_cast<int>(*val), buffer, bufferSize, 99);
         return true;
     });
 }
 
 PCWSTR GetRamFormatted() {
-    return GetMetricFormatted(g_ramFormatted, [](PWSTR buffer,
-                                                 size_t bufferSize) {
+    return GetMetricFormatted(g_ramFormatted, [](PWSTR buffer, size_t bufferSize) {
         auto status = GetRamStatus();
-        if (!status) {
-            return false;
-        }
-        // Cap to 99 to keep identical width in all cases.
-        int maxVal = 99;
-        FormatPercentValue(status->dwMemoryLoad, buffer, bufferSize, maxVal);
+        if (!status) return false;
+        FormatPercentValue(status->dwMemoryLoad, buffer, bufferSize, 99);
         return true;
     });
 }
@@ -3581,19 +3573,11 @@ PCWSTR GetRamCommittedTotalFormatted() {
 
 PCWSTR GetGpuFormatted() {
     DataCollectionSampleIfNeeded();
-    return GetMetricFormatted(g_gpuFormatted, [](PWSTR buffer,
-                                                 size_t bufferSize) {
-        if (!g_dataCollectionSession) {
-            return false;
-        }
-        std::optional<double> val =
-            g_dataCollectionSession->QueryData(MetricType::kGpuUsage);
-        if (!val) {
-            return false;
-        }
-        // Cap to 99 to keep identical width in all cases.
-        int maxVal = 99;
-        FormatPercentValue(static_cast<int>(*val), buffer, bufferSize, maxVal);
+    return GetMetricFormatted(g_gpuFormatted, [](PWSTR buffer, size_t bufferSize) {
+        if (!g_dataCollectionSession) return false;
+        std::optional<double> val = g_dataCollectionSession->QueryData(MetricType::kGpuUsage);
+        if (!val) return false;
+        FormatPercentValue(static_cast<int>(*val), buffer, bufferSize, 99);
         return true;
     });
 }
@@ -3704,14 +3688,9 @@ PCWSTR GetCpuTempFormatted() {
     DataCollectionSampleIfNeeded();
     return GetMetricFormatted(
         g_cpuTempFormatted, [](PWSTR buffer, size_t bufferSize) {
-            if (!g_dataCollectionSession) {
-                return false;
-            }
-            auto kelvin =
-                g_dataCollectionSession->QueryDataAvg(MetricType::kCpuTemp);
-            if (!kelvin) {
-                return false;
-            }
+            if (!g_dataCollectionSession) return false;
+            auto kelvin = g_dataCollectionSession->QueryDataAvg(MetricType::kCpuTemp);
+            if (!kelvin) return false;
             int celsius = static_cast<int>(*kelvin - 273.15);
             swprintf_s(buffer, bufferSize, L"%d\u00B0C", celsius);
             return true;
@@ -3911,26 +3890,27 @@ std::wstring FormatProgressBar(double percent, size_t barLength = 8, BarStyle st
     std::wstring result;
     result.reserve(barLength + 2);
 
-    if (style == BarStyle::Dot) {
-        size_t filled = static_cast<size_t>(round((percent / 100.0) * barLength));
-        for (size_t i = 0; i < barLength; i++) {
-            result += (i < filled) ? L'\x25CF' : L'\x25CB';  // ● ○
-        }
-        return result;
-    }
-
-    if (style == BarStyle::Block) {
-        size_t filled = static_cast<size_t>(round((percent / 100.0) * barLength));
-        for (size_t i = 0; i < barLength; i++) {
-            result += (i < filled) ? L'\x2588' : L'\x2591';  // █ ░
-        }
-        return result;
-    }
-
-    // Default & Pill: Sleek thin horizontal bars [▬▬▬▭▭▭]
+    // Default, Pill, Smooth, Block, Dot
     size_t filled = static_cast<size_t>(round((percent / 100.0) * barLength));
+
     for (size_t i = 0; i < barLength; i++) {
-        result += (i < filled) ? L'\x25AC' : L'\x25AD';  // ▬ ▭
+        if (i < filled) {
+            if (g_allowColorTags) {
+                result += L"\x25CF";  // ● (circle dot for taskbar clock)
+            } else {
+                double ratio = (barLength <= 1) ? 0.0 : static_cast<double>(i) / static_cast<double>(barLength - 1);
+                if (ratio < 0.35) result += L"🟩";
+                else if (ratio < 0.65) result += L"🟨";
+                else if (ratio < 0.85) result += L"🟧";
+                else result += L"🟥";
+            }
+        } else {
+            if (g_allowColorTags) {
+                result += L"\x25CB";  // ○ (empty circle dot for taskbar clock)
+            } else {
+                result += L"⬛";      // ⬛ (dark square for tooltip)
+            }
+        }
     }
     return result;
 }
@@ -5155,11 +5135,29 @@ void ApplyContainerStyles(
     }
 }
 
+inline winrt::Windows::UI::Color ParseHexColor(std::wstring_view hex) {
+    if (hex.starts_with(L"#")) hex.remove_prefix(1);
+    uint32_t val = 0;
+    for (wchar_t c : hex) {
+        val <<= 4;
+        if (c >= L'0' && c <= L'9') val |= (c - L'0');
+        else if (c >= L'a' && c <= L'f') val |= (c - L'a' + 10);
+        else if (c >= L'A' && c <= L'F') val |= (c - L'A' + 10);
+    }
+    if (hex.length() == 6) {
+        return winrt::Windows::UI::Color{ 255, static_cast<uint8_t>((val >> 16) & 0xFF), static_cast<uint8_t>((val >> 8) & 0xFF), static_cast<uint8_t>(val & 0xFF) };
+    } else if (hex.length() == 8) {
+        return winrt::Windows::UI::Color{ static_cast<uint8_t>((val >> 24) & 0xFF), static_cast<uint8_t>((val >> 16) & 0xFF), static_cast<uint8_t>((val >> 8) & 0xFF), static_cast<uint8_t>(val & 0xFF) };
+    }
+    return winrt::Windows::UI::Color{ 255, 255, 255, 255 };
+}
+
 void ApplyTextBlockStyles(
     Controls::TextBlock textBlock,
     const TextStyleSettings* textStyleSettings,
     bool noWrap,
-    std::optional<int64_t>* visibilityPropertyChangedToken) {
+    std::optional<int64_t>* visibilityPropertyChangedToken,
+    std::optional<int64_t>* textPropertyChangedToken = nullptr) {
     if (visibilityPropertyChangedToken->has_value()) {
         textBlock.UnregisterPropertyChangedCallback(
             UIElement::VisibilityProperty(),
@@ -5173,17 +5171,13 @@ void ApplyTextBlockStyles(
                 UIElement::VisibilityProperty(),
                 [](DependencyObject sender, DependencyProperty property) {
                     auto textBlock = sender.try_as<Controls::TextBlock>();
-                    if (!textBlock) {
-                        return;
-                    }
-
+                    if (!textBlock) return;
                     textBlock.Visibility(Visibility::Collapsed);
                 });
         return;
     }
 
     visibilityPropertyChangedToken->reset();
-
     textBlock.Visibility(Visibility::Visible);
 
     if (noWrap) {
@@ -5194,12 +5188,41 @@ void ApplyTextBlockStyles(
     }
 
     if (textStyleSettings && *textStyleSettings->textColor) {
-        auto textColor =
-            Markup::XamlBindingHelper::ConvertValue(
-                winrt::xaml_typename<winrt::Windows::UI::Color>(),
-                winrt::box_value(textStyleSettings->textColor.get()))
-                .as<winrt::Windows::UI::Color>();
-        textBlock.Foreground(Media::SolidColorBrush{textColor});
+        std::wstring colorStr = textStyleSettings->textColor.get();
+        if (colorStr.starts_with(L"LinearGradient:")) {
+            auto brush = winrt::Windows::UI::Xaml::Media::LinearGradientBrush();
+            brush.StartPoint({0.0, 0.5});
+            brush.EndPoint({1.0, 0.5});
+            
+            size_t start = 15;
+            std::vector<std::wstring> colors;
+            while (start < colorStr.length()) {
+                size_t comma = colorStr.find(L',', start);
+                if (comma == std::wstring::npos) comma = colorStr.length();
+                colors.push_back(colorStr.substr(start, comma - start));
+                start = comma + 1;
+            }
+            
+            for (size_t i = 0; i < colors.size(); i++) {
+                try {
+                    auto color = Markup::XamlBindingHelper::ConvertValue(
+                        winrt::xaml_typename<winrt::Windows::UI::Color>(),
+                        winrt::box_value(winrt::hstring(colors[i]))).as<winrt::Windows::UI::Color>();
+                    auto stop = winrt::Windows::UI::Xaml::Media::GradientStop();
+                    stop.Color(color);
+                    stop.Offset(colors.size() <= 1 ? 0.0 : (double)i / (colors.size() - 1));
+                    brush.GradientStops().Append(stop);
+                } catch(...) {}
+            }
+            textBlock.Foreground(brush);
+        } else {
+            auto textColor =
+                Markup::XamlBindingHelper::ConvertValue(
+                    winrt::xaml_typename<winrt::Windows::UI::Color>(),
+                    winrt::box_value(winrt::hstring(textStyleSettings->textColor.get())))
+                    .as<winrt::Windows::UI::Color>();
+            textBlock.Foreground(Media::SolidColorBrush{textColor});
+        }
     } else {
         textBlock.as<DependencyObject>().ClearValue(
             Controls::TextBlock::ForegroundProperty());
@@ -5280,15 +5303,17 @@ void ApplyTextBlockStyles(
 
     if (textStyleSettings && textStyleSettings->lineHeight) {
         textBlock.LineHeight(textStyleSettings->lineHeight);
-        // Honor the line height exactly, even when it's smaller than the
-        // natural line height. Without this, lines never shrink below the
-        // font's default height.
         textBlock.LineStackingStrategy(LineStackingStrategy::BlockLineHeight);
     } else {
-        textBlock.as<DependencyObject>().ClearValue(
-            Controls::TextBlock::LineHeightProperty());
-        textBlock.as<DependencyObject>().ClearValue(
-            Controls::TextBlock::LineStackingStrategyProperty());
+        textBlock.as<DependencyObject>().ClearValue(Controls::TextBlock::LineHeightProperty());
+        textBlock.as<DependencyObject>().ClearValue(Controls::TextBlock::LineStackingStrategyProperty());
+    }
+
+    if (textPropertyChangedToken) {
+        if (textPropertyChangedToken->has_value()) {
+            textBlock.UnregisterPropertyChangedCallback(Controls::TextBlock::TextProperty(), textPropertyChangedToken->value());
+            textPropertyChangedToken->reset();
+        }
     }
 }
 
@@ -5381,11 +5406,13 @@ void ApplyDateTimeIconContentStyles(
     ApplyTextBlockStyles(
         dateInnerTextBlock,
         clockElementStyleEnabled ? &g_settings.dateStyle : nullptr, noWrap,
-        &clockElementStyleData->dateVisibilityPropertyChangedToken);
+        &clockElementStyleData->dateVisibilityPropertyChangedToken,
+        &clockElementStyleData->dateTextPropertyChangedToken);
     ApplyTextBlockStyles(
         timeInnerTextBlock,
         clockElementStyleEnabled ? &g_settings.timeStyle : nullptr, noWrap,
-        &clockElementStyleData->timeVisibilityPropertyChangedToken);
+        &clockElementStyleData->timeVisibilityPropertyChangedToken,
+        &clockElementStyleData->timeTextPropertyChangedToken);
 
     clockElementStyleData->styleIndex = clockElementStyleIndex;
 }
@@ -5566,7 +5593,10 @@ int WINAPI GetTimeFormatEx_Hook_Win11(LPCWSTR lpLocaleName,
                 return FORMATTED_BUFFER_SIZE;
             }
 
-            return FormatLine(lpTimeStr, cchTime, g_settings.topLine.get()) + 1;
+            g_allowColorTags = true;
+            int ret = FormatLine(lpTimeStr, cchTime, g_settings.topLine.get()) + 1;
+            g_allowColorTags = false;
+            return ret;
         }
     }
 
@@ -5635,9 +5665,12 @@ int WINAPI GetDateFormatEx_Hook_Win11(LPCWSTR lpLocaleName,
                     return FORMATTED_BUFFER_SIZE;
                 }
 
-                return FormatLine(lpDateStr, cchDate,
+                g_allowColorTags = true;
+                int ret = FormatLine(lpDateStr, cchDate,
                                   g_settings.bottomLine.get()) +
                        1;
+                g_allowColorTags = false;
+                return ret;
             }
         }
     }

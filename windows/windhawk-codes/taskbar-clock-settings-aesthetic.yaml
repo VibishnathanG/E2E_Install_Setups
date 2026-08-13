@@ -1,0 +1,136 @@
+ShowSeconds: 0
+TimeFormat: hh':'mm' 'tt
+DateFormat: ddd' 'dd' 'MMM yyyy
+DateLocale: ''
+WeekdayFormat: dddd
+WeekdayFormatCustom: Sun, Mon, Tue, Wed, Thu, Fri, Sat
+TopLine: |
+  ⬡ %cpu%% %bar:cpu:4%  ◫ %ram%% %bar:ram:3%  ⚙ %gpu%% %bar:gpu:4%
+  🕒 %time%  •  📅 %date%  •  🌡 ≈ %cpu_temp% %bar:cpu_temp:3%
+BottomLine: ''
+MiddleLine: ''
+TooltipLine: |
+  ╌╌╌  S Y S T E M  ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+  ⚡ CPU        %cpu%     %bar:cpu:10%
+  🧠 Memory     %ram%     %bar:ram:10%   %ram_used%/%ram_total% GB
+  🌡 Temp       %cpu_temp%
+  🎮 GPU        %gpu%     %bar:gpu:10%
+  🎴 VRAM       %vram%     %bar:vram:10%   %vram_used%/%vram_total% GB
+  
+  ╌╌╌  S T O R A G E   &   N E T W O R K  ╌╌╌╌╌╌
+  📖 Read       %disk_read%
+  ✍ Write      %disk_write%
+  ⬇ Download   %download_speed%
+  ⬆ Upload     %upload_speed%
+  
+  ╌╌╌  N O W   P L A Y I N G  ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+  🎵 %media_title%
+  👤 %media_artist%
+  💿 %media_album%
+  
+  ╌╌╌  T O D A Y  ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+  🌤 %weather%
+  📅 %date%     🕒 %time%
+  
+  ╌╌╌  T E C H   P U L S E  ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+  🤖  %web1%
+  🐧  %web2%
+  ☁  %web3%
+  ⚙  %web4%
+  🛡  %web5%
+  ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+TooltipLineMode: replace
+Width: 330
+Height: 48
+MaxWidth: 0
+TextSpacing: -12
+DataCollection:
+  NetworkMetricsFormat: mbs
+  NetworkMetricsFixedDecimals: -1
+  DiskMetricsFormat: sameAsNetwork
+  DiskMetricsFixedDecimals: -1
+  PercentageFormat: numberOnly
+  UpdateInterval: 1
+  NetworkAdapterName: ''
+  GpuAdapterName: ''
+MediaPlayer:
+  IgnoredPlayers:
+    - ''
+  MaxLength: 40
+  MediaInfoFormat: '%media_title%'
+  NoMediaText: 'Nothing playing'
+  RemoveBrackets: 1
+WebContentWeatherLocation: ''
+WebContentWeatherFormat: '%c 🌡️%t 🌬️%w'
+WebContentWeatherUnits: autoDetect
+WebContentsItems:
+  - Url: https://www.marktechpost.com/feed/
+    BlockStart: <item>
+    Start: <title>
+    End: </title>
+    ContentMode: firstMatch
+    SearchReplace:
+      - Search: <![CDATA[
+        Replace: ''
+      - Search: ']]>'
+        Replace: ''
+      - Search: '&amp;'
+        Replace: '&'
+      - Search: '&#39;'
+        Replace: ''''
+    MaxLength: 55
+  - Url: https://www.phoronix.com/rss.php
+    BlockStart: <item>
+    Start: <title>
+    End: </title>
+    ContentMode: firstMatch
+    SearchReplace:
+      - Search: <![CDATA[
+        Replace: ''
+      - Search: ']]>'
+        Replace: ''
+      - Search: '&amp;'
+        Replace: '&'
+      - Search: '&#39;'
+        Replace: ''''
+    MaxLength: 55
+WebContentsUpdateInterval: 120
+TimeZones:
+  - ''
+TimeStyle:
+  Hidden: 0
+  TextColor: ''
+  TextAlignment: Center
+  FontSize: 11
+  FontFamily: Segoe UI Variable Display
+  FontWeight: SemiBold
+  FontStyle: ''
+  FontStretch: ''
+  CharacterSpacing: 0
+  LineHeight: 16
+DateStyle:
+  Hidden: 1
+  TextColor: ''
+  TextAlignment: ''
+  FontSize: 0
+  FontFamily: ''
+  FontWeight: ''
+  FontStyle: ''
+  FontStretch: ''
+  CharacterSpacing: 0
+  LineHeight: 0
+ContainerStyle:
+  Enable: 1
+  BackgroundColor: '#0D1A2D88'
+  BorderColor: '#4A9EFF44'
+  BorderThickness: 1
+  CornerRadius: 12
+  Height: 48
+  Width: 330
+  PaddingLeft: 10
+  PaddingTop: 4
+  PaddingRight: 10
+  PaddingBottom: 2
+  IgnoreSystemPadding: 1
+  GlassyFinish: 1
+oldTaskbarOnWin11: 0
