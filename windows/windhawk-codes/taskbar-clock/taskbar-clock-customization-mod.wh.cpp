@@ -3888,7 +3888,7 @@ std::wstring FormatProgressBar(double percent, size_t barLength = 8, BarStyle st
 
     percent = std::max(0.0, std::min(100.0, percent));
     std::wstring result;
-    result.reserve(barLength + 2);
+    result.reserve(barLength * 16 + 2);
 
     // Default, Pill, Smooth, Block, Dot
     size_t filled = static_cast<size_t>(round((percent / 100.0) * barLength));
@@ -3896,7 +3896,16 @@ std::wstring FormatProgressBar(double percent, size_t barLength = 8, BarStyle st
     for (size_t i = 0; i < barLength; i++) {
         if (i < filled) {
             if (g_allowColorTags) {
-                result += L"\x25CF";  // ● (circle dot for taskbar clock)
+                double ratio = (barLength <= 1) ? 0.0 : static_cast<double>(i) / static_cast<double>(barLength - 1);
+                const wchar_t* col = (ratio < 0.26) ? L"[#10B981]" : (ratio < 0.51) ? L"[#FBBF24]" : (ratio < 0.76) ? L"[#FB923C]" : L"[#EF4444]";
+                result += col;
+                if (style == BarStyle::Block) {
+                    result += L"\x2588[/]";  // █
+                } else if (style == BarStyle::Dot) {
+                    result += L"\x2022[/]";  // •
+                } else {
+                    result += L"\x25CB[/]";  // ○ (exact same character and size as grey dot)
+                }
             } else {
                 double ratio = (barLength <= 1) ? 0.0 : static_cast<double>(i) / static_cast<double>(barLength - 1);
                 if (ratio < 0.35) result += L"🟩";
@@ -3906,7 +3915,14 @@ std::wstring FormatProgressBar(double percent, size_t barLength = 8, BarStyle st
             }
         } else {
             if (g_allowColorTags) {
-                result += L"\x25CB";  // ○ (empty circle dot for taskbar clock)
+                result += L"[#475569]";
+                if (style == BarStyle::Block) {
+                    result += L"\x2591[/]";  // ░
+                } else if (style == BarStyle::Dot) {
+                    result += L"\x00B7[/]";  // ·
+                } else {
+                    result += L"\x25CB[/]";  // ○
+                }
             } else {
                 result += L"⬛";      // ⬛ (dark square for tooltip)
             }
@@ -4282,6 +4298,48 @@ PCWSTR GetDiskSparkFormatted() {
     });
 }
 
+// Dynamic Metric Color Tokens
+PCWSTR GetCpuColorFormatted() {
+    double val = GetCpuPercent();
+    if (val < 40.0) return L"[#10B981]";
+    if (val < 75.0) return L"[#FBBF24]";
+    return L"[#EF4444]";
+}
+PCWSTR GetRamColorFormatted() {
+    double val = GetRamPercent();
+    if (val < 60.0) return L"[#38BDF8]";
+    if (val < 85.0) return L"[#C084FC]";
+    return L"[#EF4444]";
+}
+PCWSTR GetGpuColorFormatted() {
+    double val = GetGpuPercent();
+    if (val < 40.0) return L"[#34D399]";
+    if (val < 75.0) return L"[#FBBF24]";
+    return L"[#EF4444]";
+}
+PCWSTR GetVramColorFormatted() {
+    double val = GetVramPercent();
+    if (val < 50.0) return L"[#FBBF24]";
+    if (val < 80.0) return L"[#FB923C]";
+    return L"[#EF4444]";
+}
+PCWSTR GetTempColorFormatted() {
+    double val = GetCpuTempDouble();
+    if (val < 45.0) return L"[#38BDF8]";
+    if (val < 65.0) return L"[#10B981]";
+    if (val < 80.0) return L"[#FB923C]";
+    return L"[#EF4444]";
+}
+PCWSTR GetBatteryColorFormatted() {
+    double val = GetBatteryPercent();
+    if (val <= 20.0) return L"[#EF4444]";
+    if (val <= 50.0) return L"[#FBBF24]";
+    return L"[#10B981]";
+}
+PCWSTR GetColorEndFormatted() {
+    return L"[/]";
+}
+
 size_t ResolveFormatToken(
     std::wstring_view format,
     std::function<void(PCWSTR resolvedStr)> resolvedCallback) {
@@ -4291,6 +4349,17 @@ size_t ResolveFormatToken(
         std::wstring_view token;
         FormattedStringValueGetter valueGetter;
     } formatTokens[] = {
+        {L"%cpu_color%"sv, GetCpuColorFormatted},
+        {L"%ram_color%"sv, GetRamColorFormatted},
+        {L"%gpu_color%"sv, GetGpuColorFormatted},
+        {L"%vram_color%"sv, GetVramColorFormatted},
+        {L"%cpu_temp_color%"sv, GetTempColorFormatted},
+        {L"%temp_color%"sv, GetTempColorFormatted},
+        {L"%battery_color%"sv, GetBatteryColorFormatted},
+        {L"%color_end%"sv, GetColorEndFormatted},
+        {L"%/c%"sv, GetColorEndFormatted},
+        {L"%reset%"sv, GetColorEndFormatted},
+
         {L"%cpu_bar10%"sv, GetCpuBar10Formatted},
         {L"%cpu_bar5%"sv, GetCpuBar5Formatted},
         {L"%cpu_bar8%"sv, GetCpuBar8Formatted},
@@ -4738,15 +4807,48 @@ void WINAPI ClockSystemTrayIconDataModel2_RefreshIcon_Hook(LPVOID pThis,
         pThis, param1, ClockSystemTrayIconDataModel2_RefreshIcon_Original);
 }
 
+std::wstring StripColorTags(std::wstring_view text) {
+    std::wstring result;
+    result.reserve(text.length());
+    size_t i = 0;
+    size_t len = text.length();
+    while (i < len) {
+        if (text[i] == L'[' && i + 1 < len && text[i + 1] == L'[') {
+            result += L'[';
+            i += 2;
+            continue;
+        }
+        if (text[i] == L'[') {
+            size_t close = text.find(L']', i + 1);
+            if (close != std::wstring_view::npos) {
+                std::wstring_view tag = text.substr(i + 1, close - i - 1);
+                if (tag == L"/" || tag == L"/color" || tag == L"/#" || tag == L"/c" ||
+                    tag == L"b" || tag == L"/b" || tag == L"bold" || tag == L"/bold" ||
+                    tag == L"reset" || tag.starts_with(L"#") || tag.starts_with(L"color=#")) {
+                    i = close + 1;
+                    continue;
+                }
+            }
+        }
+        result += text[i];
+        i++;
+    }
+    return result;
+}
+
 void UpdateToolTipString(LPVOID tooltipPtrPtr) {
     auto separator = L"\r\n\r\n"sv;
 
-    WCHAR extraLine[4096];
+    WCHAR extraLine[8192];
     size_t extraLength = FormatLine(extraLine, ARRAYSIZE(extraLine),
                                     g_settings.tooltipLine.get());
     if (extraLength == 0) {
         return;
     }
+
+    std::wstring stripped = StripColorTags(std::wstring_view(extraLine, extraLength));
+    const WCHAR* pLine = stripped.c_str();
+    size_t finalLen = stripped.length();
 
     // Reference:
     // https://github.com/microsoft/cppwinrt/blob/0a6cb062e2151cf6c8f357aa8ef735e359f8a98c/strings/base_string.h
@@ -4768,10 +4870,10 @@ void UpdateToolTipString(LPVOID tooltipPtrPtr) {
 
     uint64_t bytesRequired = sizeof(shared_hstring_header);
     if (g_settings.tooltipLineMode == TooltipLineMode::replace) {
-        bytesRequired += sizeof(wchar_t) * extraLength;
+        bytesRequired += sizeof(wchar_t) * finalLen;
     } else {
         bytesRequired += sizeof(wchar_t) * (tooltipHeader->length +
-                                            separator.length() + extraLength);
+                                            separator.length() + finalLen);
     }
 
     shared_hstring_header* tooltipHeaderNew =
@@ -4784,17 +4886,17 @@ void UpdateToolTipString(LPVOID tooltipPtrPtr) {
     tooltipHeaderNew->ptr = tooltipHeaderNew->buffer;
 
     if (g_settings.tooltipLineMode == TooltipLineMode::replace) {
-        memcpy(tooltipHeaderNew->buffer, extraLine,
-               sizeof(wchar_t) * extraLength);
-        tooltipHeaderNew->length = extraLength;
+        memcpy(tooltipHeaderNew->buffer, pLine,
+               sizeof(wchar_t) * finalLen);
+        tooltipHeaderNew->length = finalLen;
     } else {
         memcpy(tooltipHeaderNew->buffer + tooltipHeaderNew->length,
                separator.data(), sizeof(wchar_t) * separator.length());
         tooltipHeaderNew->length += separator.length();
 
-        memcpy(tooltipHeaderNew->buffer + tooltipHeaderNew->length, extraLine,
-               sizeof(wchar_t) * extraLength);
-        tooltipHeaderNew->length += extraLength;
+        memcpy(tooltipHeaderNew->buffer + tooltipHeaderNew->length, pLine,
+               sizeof(wchar_t) * finalLen);
+        tooltipHeaderNew->length += finalLen;
     }
 
     tooltipHeaderNew->buffer[tooltipHeaderNew->length] = L'\0';
@@ -5137,6 +5239,18 @@ void ApplyContainerStyles(
 
 inline winrt::Windows::UI::Color ParseHexColor(std::wstring_view hex) {
     if (hex.starts_with(L"#")) hex.remove_prefix(1);
+    if (hex.length() == 3) {
+        auto hexVal = [](wchar_t c) -> uint8_t {
+            if (c >= L'0' && c <= L'9') return static_cast<uint8_t>(c - L'0');
+            if (c >= L'a' && c <= L'f') return static_cast<uint8_t>(c - L'a' + 10);
+            if (c >= L'A' && c <= L'F') return static_cast<uint8_t>(c - L'A' + 10);
+            return 0;
+        };
+        uint8_t r = hexVal(hex[0]) * 17;
+        uint8_t g = hexVal(hex[1]) * 17;
+        uint8_t b = hexVal(hex[2]) * 17;
+        return winrt::Windows::UI::Color{ 255, r, g, b };
+    }
     uint32_t val = 0;
     for (wchar_t c : hex) {
         val <<= 4;
@@ -5150,6 +5264,127 @@ inline winrt::Windows::UI::Color ParseHexColor(std::wstring_view hex) {
         return winrt::Windows::UI::Color{ static_cast<uint8_t>((val >> 24) & 0xFF), static_cast<uint8_t>((val >> 16) & 0xFF), static_cast<uint8_t>((val >> 8) & 0xFF), static_cast<uint8_t>(val & 0xFF) };
     }
     return winrt::Windows::UI::Color{ 255, 255, 255, 255 };
+}
+
+inline std::optional<winrt::Windows::UI::Color> GetNamedColor(std::wstring_view name) {
+    if (name == L"cyan") return ParseHexColor(L"#38BDF8");
+    if (name == L"sky") return ParseHexColor(L"#0EA5E9");
+    if (name == L"blue") return ParseHexColor(L"#60A5FA");
+    if (name == L"indigo") return ParseHexColor(L"#818CF8");
+    if (name == L"green") return ParseHexColor(L"#10B981");
+    if (name == L"emerald") return ParseHexColor(L"#34D399");
+    if (name == L"teal") return ParseHexColor(L"#14B8A6");
+    if (name == L"yellow") return ParseHexColor(L"#FBBF24");
+    if (name == L"amber") return ParseHexColor(L"#F59E0B");
+    if (name == L"orange") return ParseHexColor(L"#FB923C");
+    if (name == L"coral") return ParseHexColor(L"#FF6B6B");
+    if (name == L"red") return ParseHexColor(L"#EF4444");
+    if (name == L"purple") return ParseHexColor(L"#A855F7");
+    if (name == L"lavender") return ParseHexColor(L"#C084FC");
+    if (name == L"violet") return ParseHexColor(L"#8B5CF6");
+    if (name == L"pink") return ParseHexColor(L"#F472B6");
+    if (name == L"rose") return ParseHexColor(L"#FB7185");
+    if (name == L"white") return ParseHexColor(L"#F8FAFC");
+    if (name == L"gray" || name == L"grey") return ParseHexColor(L"#94A3B8");
+    if (name == L"slate") return ParseHexColor(L"#64748B");
+    if (name == L"dim" || name == L"dark") return ParseHexColor(L"#475569");
+    if (name == L"accent") return ParseHexColor(L"#38BDF8");
+    return std::nullopt;
+}
+
+inline bool HasColorTags(std::wstring_view text) {
+    return text.find(L'[') != std::wstring_view::npos;
+}
+
+void UpdateTextBlockInlinesWithColorTags(
+    Controls::TextBlock textBlock,
+    std::wstring_view rawText,
+    winrt::Windows::UI::Color defaultColor) {
+    try {
+        auto inlines = textBlock.Inlines();
+        inlines.Clear();
+        textBlock.Text(L"");
+
+        std::vector<winrt::Windows::UI::Color> colorStack;
+        winrt::Windows::UI::Color currentColor = defaultColor;
+        bool isBold = false;
+        std::wstring currentSegment;
+
+        auto flushSegment = [&]() {
+            if (!currentSegment.empty()) {
+                Documents::Run run;
+                run.Text(winrt::hstring(currentSegment));
+                run.Foreground(Media::SolidColorBrush{ currentColor });
+                if (isBold) {
+                    run.FontWeight(winrt::Windows::UI::Text::FontWeight{ 700 });
+                }
+                inlines.Append(run);
+                currentSegment.clear();
+            }
+        };
+
+        size_t i = 0;
+        size_t len = rawText.length();
+        while (i < len) {
+            if (rawText[i] == L'\r') {
+                i++;
+                continue;
+            }
+            if (rawText[i] == L'\n') {
+                flushSegment();
+                Documents::LineBreak lb;
+                inlines.Append(lb);
+                i++;
+                continue;
+            }
+            if (rawText[i] == L'[' && i + 1 < len && rawText[i + 1] == L'[') {
+                currentSegment += L'[';
+                i += 2;
+                continue;
+            }
+            if (rawText[i] == L'[') {
+                size_t close = rawText.find(L']', i + 1);
+                if (close != std::wstring_view::npos) {
+                    std::wstring_view tag = rawText.substr(i + 1, close - i - 1);
+                    flushSegment();
+
+                    if (tag == L"/" || tag == L"/color" || tag == L"/#" || tag == L"/c") {
+                        if (!colorStack.empty()) {
+                            currentColor = colorStack.back();
+                            colorStack.pop_back();
+                        } else {
+                            currentColor = defaultColor;
+                        }
+                    } else if (tag == L"b" || tag == L"bold") {
+                        isBold = true;
+                    } else if (tag == L"/b" || tag == L"/bold") {
+                        isBold = false;
+                    } else if (tag == L"reset") {
+                        currentColor = defaultColor;
+                        isBold = false;
+                        colorStack.clear();
+                    } else if (tag.starts_with(L"#") || tag.starts_with(L"color=#")) {
+                        std::wstring_view hexStr = tag.starts_with(L"#") ? tag : tag.substr(7);
+                        colorStack.push_back(currentColor);
+                        currentColor = ParseHexColor(hexStr);
+                    } else {
+                        auto optColor = GetNamedColor(tag);
+                        if (optColor) {
+                            colorStack.push_back(currentColor);
+                            currentColor = *optColor;
+                        } else {
+                            currentSegment += rawText.substr(i, close - i + 1);
+                        }
+                    }
+                    i = close + 1;
+                    continue;
+                }
+            }
+            currentSegment += rawText[i];
+            i++;
+        }
+        flushSegment();
+    } catch (...) {}
 }
 
 void ApplyTextBlockStyles(
@@ -5187,13 +5422,14 @@ void ApplyTextBlockStyles(
             Controls::TextBlock::TextWrappingProperty());
     }
 
+    winrt::Windows::UI::Color defaultTextColor{ 255, 240, 244, 255 };
     if (textStyleSettings && *textStyleSettings->textColor) {
         std::wstring colorStr = textStyleSettings->textColor.get();
         if (colorStr.starts_with(L"LinearGradient:")) {
             auto brush = winrt::Windows::UI::Xaml::Media::LinearGradientBrush();
             brush.StartPoint({0.0, 0.5});
             brush.EndPoint({1.0, 0.5});
-            
+
             size_t start = 15;
             std::vector<std::wstring> colors;
             while (start < colorStr.length()) {
@@ -5202,7 +5438,7 @@ void ApplyTextBlockStyles(
                 colors.push_back(colorStr.substr(start, comma - start));
                 start = comma + 1;
             }
-            
+
             for (size_t i = 0; i < colors.size(); i++) {
                 try {
                     auto color = Markup::XamlBindingHelper::ConvertValue(
@@ -5216,12 +5452,8 @@ void ApplyTextBlockStyles(
             }
             textBlock.Foreground(brush);
         } else {
-            auto textColor =
-                Markup::XamlBindingHelper::ConvertValue(
-                    winrt::xaml_typename<winrt::Windows::UI::Color>(),
-                    winrt::box_value(winrt::hstring(textStyleSettings->textColor.get())))
-                    .as<winrt::Windows::UI::Color>();
-            textBlock.Foreground(Media::SolidColorBrush{textColor});
+            defaultTextColor = ParseHexColor(colorStr);
+            textBlock.Foreground(Media::SolidColorBrush{defaultTextColor});
         }
     } else {
         textBlock.as<DependencyObject>().ClearValue(
@@ -5313,6 +5545,31 @@ void ApplyTextBlockStyles(
         if (textPropertyChangedToken->has_value()) {
             textBlock.UnregisterPropertyChangedCallback(Controls::TextBlock::TextProperty(), textPropertyChangedToken->value());
             textPropertyChangedToken->reset();
+        }
+
+        *textPropertyChangedToken = textBlock.RegisterPropertyChangedCallback(
+            Controls::TextBlock::TextProperty(),
+            [defaultTextColor](DependencyObject sender, DependencyProperty /*property*/) {
+                thread_local bool s_inCallback = false;
+                if (s_inCallback) return;
+
+                auto tb = sender.try_as<Controls::TextBlock>();
+                if (!tb) return;
+
+                winrt::hstring raw = tb.Text();
+                std::wstring_view sv{ raw };
+                if (HasColorTags(sv)) {
+                    s_inCallback = true;
+                    UpdateTextBlockInlinesWithColorTags(tb, sv, defaultTextColor);
+                    s_inCallback = false;
+                }
+            });
+
+        // Apply immediately if already has text with tags
+        winrt::hstring currentText = textBlock.Text();
+        std::wstring_view sv{ currentText };
+        if (HasColorTags(sv)) {
+            UpdateTextBlockInlinesWithColorTags(textBlock, sv, defaultTextColor);
         }
     }
 }
@@ -6978,4 +7235,3 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved) {
 
     return TRUE;
 }
-

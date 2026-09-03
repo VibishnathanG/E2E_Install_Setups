@@ -1,14 +1,14 @@
 ShowSeconds: 0
 TimeFormat: hh':'mm' 'tt
-DateFormat: ddd','dd'-'MMM-yyyy
-DateLocale: ""
+DateFormat: ddd', 'dd'-'MMM-yyyy
+DateLocale: ''
 WeekdayFormat: dddd
 WeekdayFormatCustom: Sun, Mon, Tue, Wed, Thu, Fri, Sat
 TopLine: |
-  ⌬%cpu%%%bar:cpu:4:pill%  ◫%ram_used%G  ⛭%gpu%%%bar:gpu:4:pill%  ◈%vram_used%G
-  🕒%time% ⌗ 📅 %date% ⌗☄️%cpu_temp%
-BottomLine: ""
-MiddleLine: ""
+  ⌬ %cpu%%%bar:cpu:4:pill% ◫ %ram_used%G  ⛭ %gpu%%%bar:gpu:4:pill% ✧ %vram_used%G
+  🕒%time%  ⌗ 📅 %date% ⌗ ☄️%cpu_temp%
+BottomLine: ''
+MiddleLine: ''
 TooltipLine: |
   ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
   ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⠁⠸⢳⡄⠀⠀⠀⠀⠀⠀⠀⠀
@@ -48,7 +48,7 @@ TooltipLine: |
   📅 %date%, 🕒 %time%
 
   ╌╌╌  T E C H   P U L S E  ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
-  🤖 AI        ➜ %web1%   【🧠 MarkTechPost】 
+  🤖 AI        ➜ %web1%   【🧠 MarkTechPost】
 
   🐧 Linux    ➜ %web2%   【🐧 Phoronix】
 
@@ -60,9 +60,9 @@ TooltipLine: |
   ✦ ·∞ ┄┅┄╾┄╾ ❖ ═════ ❂ ✧ ❂ ═════ ❖ ╼┄┅┄┄╾ ∞· ✦
 TooltipLineMode: replace
 Width: 310
-Height: 48
+Height: 50
 MaxWidth: 0
-TextSpacing: -14
+TextSpacing: -15
 DataCollection:
   NetworkMetricsFormat: mbs
   NetworkMetricsFixedDecimals: -1
@@ -70,17 +70,17 @@ DataCollection:
   DiskMetricsFixedDecimals: -1
   PercentageFormat: zeroPadding
   UpdateInterval: 1
-  NetworkAdapterName: ""
-  GpuAdapterName: ""
+  NetworkAdapterName: ''
+  GpuAdapterName: ''
 MediaPlayer:
   IgnoredPlayers:
-    - ""
+    - ''
   MaxLength: 40
-  MediaInfoFormat: "%media_title%"
+  MediaInfoFormat: '%media_title%'
   NoMediaText: Nothing playing
   RemoveBrackets: 1
-WebContentWeatherLocation: ""
-WebContentWeatherFormat: "%c 🌡️%t 🌬️%w"
+WebContentWeatherLocation: ''
+WebContentWeatherFormat: '%c 🌡️%t 🌬️%w'
 WebContentWeatherUnits: autoDetect
 WebContentsItems:
   - Url: https://www.marktechpost.com/feed/
@@ -90,13 +90,13 @@ WebContentsItems:
     ContentMode: firstMatch
     SearchReplace:
       - Search: <![CDATA[
-        Replace: ""
-      - Search: "]]>"
-        Replace: ""
-      - Search: "&amp;"
-        Replace: "&"
-      - Search: "&#39;"
-        Replace: "'"
+        Replace: ''
+      - Search: ']]>'
+        Replace: ''
+      - Search: '&amp;'
+        Replace: '&'
+      - Search: '&#39;'
+        Replace: ''''
     MaxLength: 55
   - Url: https://www.phoronix.com/rss.php
     BlockStart: <item>
@@ -105,13 +105,13 @@ WebContentsItems:
     ContentMode: firstMatch
     SearchReplace:
       - Search: <![CDATA[
-        Replace: ""
-      - Search: "]]>"
-        Replace: ""
-      - Search: "&amp;"
-        Replace: "&"
-      - Search: "&#39;"
-        Replace: "'"
+        Replace: ''
+      - Search: ']]>'
+        Replace: ''
+      - Search: '&amp;'
+        Replace: '&'
+      - Search: '&#39;'
+        Replace: ''''
     MaxLength: 55
   - Url: https://aws.amazon.com/blogs/aws/feed/
     BlockStart: <item>
@@ -120,13 +120,13 @@ WebContentsItems:
     ContentMode: firstMatch
     SearchReplace:
       - Search: <![CDATA[
-        Replace: ""
-      - Search: "]]>"
-        Replace: ""
-      - Search: "&amp;"
-        Replace: "&"
-      - Search: "&#39;"
-        Replace: "'"
+        Replace: ''
+      - Search: ']]>'
+        Replace: ''
+      - Search: '&amp;'
+        Replace: '&'
+      - Search: '&#39;'
+        Replace: ''''
     MaxLength: 55
   - Url: https://kubernetes.io/feed.xml
     BlockStart: <item>
@@ -135,13 +135,13 @@ WebContentsItems:
     ContentMode: firstMatch
     SearchReplace:
       - Search: <![CDATA[
-        Replace: ""
-      - Search: "]]>"
-        Replace: ""
-      - Search: "&amp;"
-        Replace: "&"
-      - Search: "&#39;"
-        Replace: "'"
+        Replace: ''
+      - Search: ']]>'
+        Replace: ''
+      - Search: '&amp;'
+        Replace: '&'
+      - Search: '&#39;'
+        Replace: ''''
     MaxLength: 55
   - Url: https://feeds.feedburner.com/TheHackersNews
     BlockStart: <item>
@@ -150,47 +150,47 @@ WebContentsItems:
     ContentMode: firstMatch
     SearchReplace:
       - Search: <![CDATA[
-        Replace: ""
-      - Search: "]]>"
-        Replace: ""
-      - Search: "&amp;"
-        Replace: "&"
-      - Search: "&#39;"
-        Replace: "'"
+        Replace: ''
+      - Search: ']]>'
+        Replace: ''
+      - Search: '&amp;'
+        Replace: '&'
+      - Search: '&#39;'
+        Replace: ''''
     MaxLength: 55
 WebContentsUpdateInterval: 120
 TimeZones:
-  - ""
+  - ''
 TimeStyle:
   Hidden: 0
-  TextColor: "#F0F4FF"
+  TextColor: '#F0F4FF'
   TextAlignment: Center
   FontSize: 15
   FontFamily: Segoe UI Variable Display
   FontWeight: SemiBold
-  FontStyle: ""
-  FontStretch: ""
+  FontStyle: ''
+  FontStretch: ''
   CharacterSpacing: 0
-  LineHeight: 15
+  LineHeight: 14
 DateStyle:
   Hidden: 1
-  TextColor: ""
-  TextAlignment: ""
+  TextColor: ''
+  TextAlignment: ''
   FontSize: 0
-  FontFamily: ""
-  FontWeight: ""
-  FontStyle: ""
-  FontStretch: ""
+  FontFamily: ''
+  FontWeight: ''
+  FontStyle: ''
+  FontStretch: ''
   CharacterSpacing: 0
   LineHeight: 0
 ContainerStyle:
   Enable: 1
-  BackgroundColor: "#1c1c1c"
-  BorderColor: "#323232"
+  BackgroundColor: '#1c1c1c'
+  BorderColor: '#323232'
   BorderThickness: 2
-  CornerRadius: 15
-  Height: 34
-  Width: 300
+  CornerRadius: 20
+  Height: 35
+  Width: 305
   PaddingLeft: 1
   PaddingTop: 1
   PaddingRight: 1
