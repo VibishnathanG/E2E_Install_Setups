@@ -2,7 +2,7 @@ Write-Host "powershell -ExecutionPolicy Bypass -File E:\Temp\backup-wsl.ps1 --> 
 
 $Distro = "WSL-Main-Ubuntu-24.04"
 
-$BackupDir = "H:\My Drive\Backups"
+$BackupDir = "H:\My Drive\Backups-WSL"
 $WorkDir = "E:\Temp"
 
 $TS = Get-Date -Format "yyyyMMdd-HHmmss"

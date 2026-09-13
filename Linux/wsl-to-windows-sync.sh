@@ -20,6 +20,8 @@ rsync -aHvh \
   --exclude=".venv/" \
   --exclude=".env/" \
   --exclude="ENV/" \
+  --exclude="cpython/" \
+  --exclude="ENV/" \
   --exclude="__pycache__/" \
   --exclude="*.pyc" \
   --exclude="*.pyo" \
