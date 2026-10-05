@@ -2110,7 +2110,7 @@ static void ExecuteMediaAction(const std::wstring& action, FrameworkElement cons
                 if (IsIconic(targetWindow)) {
                     ShowWindow(targetWindow, SW_RESTORE);
                 }
-                
+
                 HWND hCurWnd = GetForegroundWindow();
                 if (hCurWnd && hCurWnd != targetWindow) {
                     DWORD dwMyID = GetCurrentThreadId();
@@ -4680,7 +4680,7 @@ static void ShowMediaContextMenu(FrameworkElement const& target) {
                     if (auto bgFe = FindChildByName(g_playerGrid, L"FluentMedia_Background")) {
                         if (auto bgBorder = bgFe.try_as<Border>()) {
                             auto& bgType = g_settings.backgroundType;
-                            if (bgType == L"acrylic" || bgType == L"solid" || bgType == L"gradient" || 
+                            if (bgType == L"acrylic" || bgType == L"solid" || bgType == L"gradient" ||
                                 bgType == L"mica" || bgType == L"mica_alt") {
                                 bgBorder.Background(MakeBackgroundBrush());
                                 bgBorder.Visibility(Visibility::Visible);
@@ -4693,7 +4693,7 @@ static void ShowMediaContextMenu(FrameworkElement const& target) {
                 Wh_Log(L"ShowMediaContextMenu: Closed handler exception");
             }
         });
-        
+
         menu.ShowAt(target, flyoutOptions);
     } catch (...) {
         Wh_Log(L"ShowMediaContextMenu: exception");
@@ -4778,7 +4778,7 @@ static void RefreshMiniPlayerFlyoutUI() {
             try { currentId = std::wstring(sessionCopy.SourceAppUserModelId()); } catch (...) {}
         }
     }
-    
+
     try {
         if (g_miniPlayerTitleRef) {
             std::wstring displayTitle;
@@ -4891,7 +4891,7 @@ static void RefreshMiniPlayerFlyoutUI() {
             } else {
                 bool isLight = IsSystemLightTheme();
                 int hoveredIdx = g_miniSessionHoveredIndex.load();
-                
+
                 for (uint32_t i = 0; i < childCount && i < infos.size(); ++i) {
                     bool isCurrent = (infos[i].id == currentId);
                     bool wasCurrent = isCurrent;
@@ -4993,7 +4993,7 @@ static void AnimateSessionPill(winrt::Windows::UI::Xaml::Shapes::Rectangle const
             BYTE r = std::min(255, (int)accentColor.R + 60);
             BYTE g = std::min(255, (int)accentColor.G + 60);
             BYTE b = std::min(255, (int)accentColor.B + 60);
-            
+
             pill.Fill(MakeBrush({0xFF, r, g, b}));
         } catch (...) {
             pill.Fill(MakeBrush({0xFF, 0x40, 0xA0, 0xFF}));
@@ -5089,10 +5089,10 @@ static Button BuildSessionRowButton(const MiniSessionInfo& info, bool isCurrent,
     winrt::Windows::UI::Color bgUnselected  = winrt::Windows::UI::Color{0x00, 0x00, 0x00, 0x00};
     winrt::Windows::UI::Color bgNormal = isCurrent ? bgSelected : bgUnselected;
 
-    winrt::Windows::UI::Color bgHover = isLight 
+    winrt::Windows::UI::Color bgHover = isLight
         ? winrt::Windows::UI::Color{0x0E, 0x00, 0x00, 0x00}
         : winrt::Windows::UI::Color{0x14, 0xFF, 0xFF, 0xFF};
-    winrt::Windows::UI::Color bgPressed = isLight 
+    winrt::Windows::UI::Color bgPressed = isLight
         ? winrt::Windows::UI::Color{0x18, 0x00, 0x00, 0x00}
         : winrt::Windows::UI::Color{0x20, 0xFF, 0xFF, 0xFF};
 
@@ -5443,11 +5443,11 @@ static Grid BuildMiniPlayerFlyoutContent() {
     try {
         winrt::Windows::UI::Xaml::Media::AcrylicBrush acrylic;
         acrylic.BackgroundSource(winrt::Windows::UI::Xaml::Media::AcrylicBackgroundSource::Backdrop);
-        
+
         winrt::Windows::UI::Color tint = isLight
             ? winrt::Windows::UI::Color{0xff, 0xf2, 0xf2, 0xf2}
             : winrt::Windows::UI::Color{0xFF, 0x24, 0x24, 0x24};
-        
+
         acrylic.TintColor(tint);
         acrylic.TintOpacity(isLight ? 0.0 : 0.5);
         acrylic.TintLuminosityOpacity(isLight ? 0.9 : 0.96);
@@ -5455,7 +5455,7 @@ static Grid BuildMiniPlayerFlyoutContent() {
             ? winrt::Windows::UI::Color{0xff, 0xf2, 0xf2, 0xf2}
             : winrt::Windows::UI::Color{0xFF, 0x24, 0x24, 0x24};
         acrylic.FallbackColor(fallback);
-        
+
         flyoutContentBackground = acrylic;
     } catch (...) {
         flyoutContentBackground = MakeBrush(isLight
@@ -5630,14 +5630,14 @@ static Grid BuildMiniPlayerFlyoutContent() {
             if (*pressLocked) return;
             applyState(false);
         };
-        
+
         RunWhenButtonReady(btn, [btn, applyState]() {
             try {
                 SetupMediaButtonCommonStates(btn);
                 applyState(false);
             } catch (...) {}
         });
-        
+
         btn.PointerEntered([isHovered, updateBtnVisualState](auto const&, auto const&) {
             *isHovered = true;
             updateBtnVisualState();
@@ -5662,7 +5662,7 @@ static Grid BuildMiniPlayerFlyoutContent() {
                 applyState(false);
             } catch (...) {}
         })), true);
-        
+
         return btn;
     };
 
@@ -7093,8 +7093,8 @@ static Grid BuildPlayerGrid() {
         wrapper.Background(MakeBrush({0x00, 0, 0, 0}));
 
         Canvas::SetZIndex(backgroundBorder, 0);
-        Canvas::SetZIndex(playerButton, 1);    
-        Canvas::SetZIndex(panel, 2);           
+        Canvas::SetZIndex(playerButton, 1);
+        Canvas::SetZIndex(panel, 2);
         wrapper.Children().Append(backgroundBorder);
         wrapper.Children().Append(playerButton);
         wrapper.Children().Append(panel);
@@ -7341,7 +7341,7 @@ static void UpdateAnchorDebugOverlay(Grid const& targetGrid, FrameworkElement co
 static const wchar_t* const kStartButtonNames[] = {
     L"StartButton",
     L"StartMenuButton",
-    L"StartMenuLaunchButton", 
+    L"StartMenuLaunchButton",
     L"LaunchListButton",
 };
 static Grid FindTaskbarRootGrid(FrameworkElement const& root) {
@@ -7860,7 +7860,7 @@ static void RemovePlayerGrid() {
             }
             g_layoutUpdateToken = {};
         }
-        
+
         if (g_trackedElement) {
             try {
                 if (g_hasTrackedElementOriginalMargin) {
@@ -8866,7 +8866,7 @@ static void UpdateVisibility() {
                 SpawnTrackedWorker([]() { StopVizCaptureThread(); });
             }
         }
-        
+
         if (g_settings.enableTitleScrolling || g_settings.enableArtistScrolling) {
             if (hide) StopScrollTimer();
             else      StartScrollTimer();
@@ -9117,4 +9117,3 @@ void Wh_ModSettingsChanged() {
     g_applyingSettings = false;
     StartTimerThread();
 }
-

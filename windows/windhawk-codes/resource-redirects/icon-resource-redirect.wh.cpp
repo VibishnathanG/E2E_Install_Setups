@@ -20,11 +20,317 @@
 // https://github.com/m417z/my-windhawk-mods
 
 // ==WindhawkModReadme==
-/*...*/
+/*
+# Resource Redirect
+
+Define alternative files for loading various resources (e.g. icons in
+imageres.dll) for simple theming without having to modify system files.
+
+## Icon themes
+
+An icon theme from the collection of community-contributed icon theme packs can
+be selected in the mod's settings. Screenshots of some of the icon themes can be
+found in the [Resource Redirect icon
+themes](https://github.com/ramensoftware/resource-redirect-icon-themes#themes)
+repository.
+
+An icon theme can also be installed manually by downloading it and specifying
+its path in the mod's settings. For details, refer to the guide in the
+repository.
+
+A short demonstration can be found [here on
+YouTube](https://youtu.be/irzVmKHB83E).
+
+## Disable folder thumbnails
+
+The mod has an option to disable thumbnails in Explorer folders, making folders
+use a generic folder icon instead of showing a preview of their contents. Some
+icon themes may look better with this option enabled, while other themes have
+proper support for styling folder thumbnails. Folder thumbnails are only
+replaced when the "Redirect all loaded resources" option is enabled (see below).
+
+## Redirect all loaded resources (experimental)
+
+The option to redirect all resources can be enabled in the settings. In this
+case, redirection won't be limited to the resource types and loading methods
+listed above. This option might become the default in the future.
+
+## Theme paths
+
+Theme paths can be set in the settings. A theme path is a folder with
+alternative resource files and a `theme.ini` file that contains redirection
+rules. For example, the `theme.ini` file may contain the following:
+
+```
+[redirections]
+%SystemRoot%\explorer.exe=explorer.exe
+%SystemRoot%\System32\imageres.dll=imageres.dll
+```
+
+In this case, the folder must also contain the `explorer.exe` and `imageres.dll`
+files, which will be used as the redirection resource files.
+
+Alternatively, the theme path can be the `.ini` file itself.
+
+## Supported resource types and loading methods
+
+The mod supports the following resource types and loading methods:
+
+* Icons extracted with the `PrivateExtractIconsW` function.
+* Icons, cursors and bitmaps loaded with the `LoadImageW` function.
+* Icons loaded with the `LoadIconW` function.
+* Cursors loaded with the `LoadCursorW` function.
+* Bitmaps loaded with the `LoadBitmapW` function.
+* Menus loaded with the `LoadMenuW` function.
+* Dialogs loaded with the `DialogBoxParamW` and `CreateDialogParamW` functions.
+* Strings loaded with the `LoadStringW` function.
+* GDI+ images (e.g. PNGs) loaded with the `SHCreateStreamOnModuleResourceW`
+  function.
+* DirectUI resources (usually `UIFILE` and `XML`) loaded with the
+  `SetXMLFromResource` function.
+
+## Choosing the redirected resource file
+
+For some files, Windows has additional .mui and/or .mun resource files. For
+example, when loading a resource from `%SystemRoot%\System32\imageres.dll`,
+Windows looks for the resource in these files, in order:
+
+* `%SystemRoot%\System32\en-US\imageres.dll.mui` - The language-specific file.
+  `en-US` may be different depending on the Windows language.
+* `%SystemRoot%\System32\imageres.dll` - The target file itself.
+* `%SystemRoot%\SystemResources\imageres.dll.mun` - The language-neutral file.
+
+For overriding resources, `imageres.dll` must be specified as the redirected
+resource file, not `imageres.dll.mui` or `imageres.dll.mun`, regardless of where
+the resources to be redirected are actually located.
+
+The resource lookup order then becomes:
+
+* `imageres_redirection.dll` (the redirection resource file specified in this
+  mod)
+* `imageres.dll.mui`
+* `imageres.dll`
+* `imageres.dll.mun`
+*/
 // ==/WindhawkModReadme==
 
 // ==WindhawkModSettings==
-/*...*/
+/*
+- iconTheme: ""
+  $name: Icon theme
+  $description: >-
+    The icon theme to use. For details, refer to the mod description.
+  $options:
+  - "": None
+  - All White Icons|themes/icons/niivu/All%20White%20Icons.zip: All White Icons (by niivu)
+  - Antu alt|themes/icons/niivu/antu%20alt.zip: Antu alt (by niivu)
+  - Antu|themes/icons/niivu/antu.zip: Antu (by niivu)
+  - Kuyen Alt|themes/icons/niivu/kuyen%20alt.zip: Kuyen Alt (by niivu)
+  - Kuyen|themes/icons/niivu/kuyen.zip: Kuyen (by niivu)
+  - ARC Symbolic|themes/icons/niivu/ARC%20Symbolic.zip: ARC Symbolic (by niivu)
+  - ARC|themes/icons/niivu/ARC.zip: ARC (by niivu)
+  - Arc Neutral Brown|themes/icons/niivu/arc-neutral%20brown.zip: Arc Neutral Brown (by niivu)
+  - Arc Neutral Grey|themes/icons/niivu/arc-neutral%20grey.zip: Arc Neutral Grey (by niivu)
+  - BananaOneUI|themes/icons/niivu/BANAANA%20OneUI.zip: BananaOneUI (by niivu)
+  - Big Sur DarkMode|themes/icons/niivu/Big%20Sur%20DarkMode.zip: Big Sur DarkMode (by niivu)
+  - Big Sur LightMode|themes/icons/niivu/Big%20Sur%20LightMode.zip: Big Sur LightMode (by niivu)
+  - Blanked DarkMode|themes/icons/niivu/blanked%20dark%20mode.zip: Blanked DarkMode (by niivu)
+  - Blanked LightMode|themes/icons/niivu/blanked%20light%20mode.zip: Blanked LightMode (by niivu)
+  - Bonny|themes/icons/niivu/bonny%20by%20niivu.zip: Bonny (by niivu)
+  - Bouquet|themes/icons/niivu/bouquet.zip: Bouquet (by niivu)
+  - Buuf|themes/icons/niivu/buuf.zip: Buuf (by niivu)
+  - CakeOS 2.0|themes/icons/niivu/cakeOS%202.0.zip: CakeOS 2.0 (by niivu)
+  - CakeOS Blue|themes/icons/niivu/Cake%20OS%20Blue.zip: CakeOS Blue (by niivu)
+  - CakeOS Green|themes/icons/niivu/Cake%20OS%20Green.zip: CakeOS Green (by niivu)
+  - CakeOS Orange|themes/icons/niivu/Cake%20OS%20Orange.zip: CakeOS Orange (by niivu)
+  - CakeOS Purple|themes/icons/niivu/Cake%20OS%20Purple.zip: CakeOS Purple (by niivu)
+  - CakeOS Red|themes/icons/niivu/Cake%20OS%20Red.zip: CakeOS Red (by niivu)
+  - Candy Original|themes/icons/niivu/candy%20original%20folders.zip: Candy Original (by niivu)
+  - Candy Outlined|themes/icons/niivu/candy%20outlined%20folders.zip: Candy Outlined (by niivu)
+  - Catppuccin|themes/icons/niivu/Catppuccin.zip: Catppuccin (by niivu)
+  - Catppuccin Blue|themes/icons/niivu/Catppuccin%20blue.zip: Catppuccin Blue (by niivu)
+  - Catppuccin Flamingo|themes/icons/niivu/Catppuccin%20flamingo.zip: Catppuccin Flamingo (by niivu)
+  - Catppuccin Green|themes/icons/niivu/Catppuccin%20green.zip: Catppuccin Green (by niivu)
+  - Catppuccin Latte|themes/icons/niivu/Catppuccin%20Latte.zip: Catppuccin Latte (by niivu)
+  - Catppuccin Lavender|themes/icons/niivu/Catppuccin%20lavender.zip: Catppuccin Lavender (by niivu)
+  - Catppuccin Maroon|themes/icons/niivu/Catppuccin%20maroon.zip: Catppuccin Maroon (by niivu)
+  - Catppuccin Mauve|themes/icons/niivu/Catppuccin%20mauve.zip: Catppuccin Mauve (by niivu)
+  - Catppuccin Mocha|themes/icons/niivu/Catppuccin%20Mocha.zip: Catppuccin Mocha (by niivu)
+  - Catppuccin Peach|themes/icons/niivu/Catppuccin%20peach.zip: Catppuccin Peach (by niivu)
+  - Catppuccin Pink|themes/icons/niivu/Catppuccin%20pink.zip: Catppuccin Pink (by niivu)
+  - Catppuccin Red|themes/icons/niivu/Catppuccin%20red.zip: Catppuccin Red (by niivu)
+  - Catppuccin Sky|themes/icons/niivu/Catppuccin%20sky.zip: Catppuccin Sky (by niivu)
+  - Catppuccin Teal|themes/icons/niivu/Catppuccin%20teal.zip: Catppuccin Teal (by niivu)
+  - Catppuccin Yellow|themes/icons/niivu/Catppuccin%20yellow.zip: Catppuccin Yellow (by niivu)
+  - Deepin Blue DarkMode|themes/icons/niivu/Deepin%20Blue%20-%20for%20dark%20themes.zip: Deepin Blue DarkMode (by niivu)
+  - Deepin Blue LightMode|themes/icons/niivu/Deepin%20Blue%20-%20for%20light%20themes.zip: Deepin Blue LightMode (by niivu)
+  - Deepin Brown DarkMode|themes/icons/niivu/Deepin%20Brown%20-%20for%20dark%20themes.zip: Deepin Brown DarkMode (by niivu)
+  - Deepin Brown LightMode|themes/icons/niivu/Deepin%20Brown%20-%20for%20light%20themes.zip: Deepin Brown LightMode (by niivu)
+  - Deepin Green DarkMode|themes/icons/niivu/Deepin%20Green%20-%20for%20dark%20themes.zip: Deepin Green DarkMode (by niivu)
+  - Deepin Green LightMode|themes/icons/niivu/Deepin%20Green%20-%20for%20light%20themes.zip: Deepin Green LightMode (by niivu)
+  - Deepin Slate DarkMode|themes/icons/niivu/Deepin%20Slate%20-%20for%20dark%20themes.zip: Deepin Slate DarkMode (by niivu)
+  - Deepin Slate LightMode|themes/icons/niivu/Deepin%20Slate%20-%20for%20light%20themes.zip: Deepin Slate LightMode (by niivu)
+  - Deepo|themes/icons/niivu/Deepo%20Icon%20pack.zip: Deepo (by niivu)
+  - Tango|themes/icons/niivu/Tango.zip: Tango (by niivu)
+  - Tangerine|themes/icons/niivu/Tangerine.zip: Tangerine (by niivu)
+  - Gnome|themes/icons/niivu/Gnome.zip: Gnome (by niivu)
+  - Cheser|themes/icons/niivu/Cheser.zip: Cheser (by niivu)
+  - Gnome Brave|themes/icons/niivu/Gnome%20Brave.zip: Gnome Brave (by niivu)
+  - Gnome Human|themes/icons/niivu/Gnome%20Human.zip: Gnome Human (by niivu)
+  - Gnome Noble|themes/icons/niivu/Gnome%20Noble.zip: Gnome Noble (by niivu)
+  - Gnome Wine|themes/icons/niivu/Gnome%20Wine.zip: Gnome Wine (by niivu)
+  - Gnome Wise|themes/icons/niivu/Gnome%20Wise.zip: Gnome Wise (by niivu)
+  - Elementary|themes/icons/niivu/Elementary.zip: Elementary (by niivu)
+  - Elementary New|themes/icons/niivu/Elementary%20NEW.zip: Elementary New (by niivu)
+  - Humanity|themes/icons/niivu/Humanity.zip: Humanity (by niivu)
+  - Everblush|themes/icons/niivu/Everblush.zip: Everblush (by niivu)
+  - Everforest|themes/icons/niivu/everforest.zip: Everforest (by niivu)
+  - Everforest Blank|themes/icons/niivu/everforest%20blank.zip: Everforest Blank (by niivu)
+  - Eyecandy|themes/icons/niivu/Eyecandy.zip: Eyecandy (by niivu)
+  - Faba|themes/icons/niivu/FABA.zip: Faba (by niivu)
+  - Faba Symbolic|themes/icons/niivu/FABA%20Symbolic.zip: Faba Symbolic (by niivu)
+  - Slate|themes/icons/niivu/SLATE.zip: Slate (by niivu)
+  - Slate Symbolic|themes/icons/niivu/SLATE%20Symbolic.zip: Slate Symbolic (by niivu)
+  - Fetch|themes/icons/niivu/Fetch.zip: Fetch (by niivu)
+  - Fluent|themes/icons/niivu/Fluent.zip: Fluent (by niivu)
+  - Fluent Keys Night|themes/icons/niivu/Fluent%20Keys%20Night.zip: Fluent Keys Night (by niivu)
+  - Fluent Keys Day|themes/icons/niivu/Fluent%20Keys%20Day.zip: Fluent Keys Day (by niivu)
+  - Flurry|themes/icons/niivu/FLURRY.zip: Flurry (by niivu)
+  - Gruvbox|themes/icons/niivu/Gruvbox.zip: Gruvbox (by niivu)
+  - Gruvbox Plus Olive|themes/icons/niivu/gruvbox%20plus%20-%20Olive.zip: Gruvbox Plus Olive (by niivu)
+  - Gruvbox Numix|themes/icons/niivu/Gruvbox%20numix.zip: Gruvbox Numix (by niivu)
+  - Haiku BeOS|themes/icons/niivu/Haiku%20BeOS.zip: Haiku BeOS (by niivu)
+  - Janguru Blue|themes/icons/niivu/janguru%20blue.zip: Janguru Blue (by niivu)
+  - Janguru BlueGrey|themes/icons/niivu/janguru%20bluegrey.zip: Janguru BlueGrey (by niivu)
+  - Janguru Brown|themes/icons/niivu/janguru%20brown.zip: Janguru Brown (by niivu)
+  - Janguru Green|themes/icons/niivu/janguru%20green.zip: Janguru Green (by niivu)
+  - Janguru Grey|themes/icons/niivu/janguru%20grey.zip: Janguru Grey (by niivu)
+  - Janguru Orange|themes/icons/niivu/janguru%20orange.zip: Janguru Orange (by niivu)
+  - koZ|themes/icons/niivu/koZ.zip: koZ (by niivu)
+  - Kripton Flatery|themes/icons/niivu/Kripton%20Flatery.zip: Kripton Flatery (by niivu)
+  - Linuxfx 11 AIO|themes/icons/niivu/Linuxfx-11-AIO.zip: Linuxfx 11 AIO (by niivu)
+  - Linuxfx 11 Lite|themes/icons/niivu/Linuxfx-11-lite.zip: Linuxfx 11 Lite (by niivu)
+  - Lol|themes/icons/niivu/lol.zip: Lol (by niivu)
+  - Lumicons Folders|themes/icons/niivu/Lumicons%20Folders.zip: Lumicons Folders (by niivu)
+  - Lumicons Symbols|themes/icons/niivu/Lumicons%20Symbols.zip: Lumicons Symbols (by niivu)
+  - macOSx|themes/icons/niivu/mac%20osx.zip: macOSx (by niivu)
+  - macOS Regular|themes/icons/niivu/macOS%20Regular.zip: macOS Regular (by niivu)
+  - macOS Blue|themes/icons/niivu/macOS%20blue.zip: macOS Blue (by niivu)
+  - macOS Yellow|themes/icons/niivu/macOS%20Yellow%20Folders.zip: macOS Yellow (by niivu)
+  - macOS DarkMode|themes/icons/niivu/macOS%20Dark%20Mode.zip: macOS DarkMode (by niivu)
+  - macOS LightMode|themes/icons/niivu/macOS%20Light%20Mode.zip: macOS LightMode (by niivu)
+  - macPac DarkMode|themes/icons/niivu/macpac%20darkmode.zip: macPac DarkMode (by niivu)
+  - macPac LightMode|themes/icons/niivu/macpac%20lightmode.zip: macPac LightMode (by niivu)
+  - Mechanical|themes/icons/niivu/mechanical.zip: Mechanical (by niivu)
+  - Minium2|themes/icons/niivu/MINIUM2.zip: Minium2 (by niivu)
+  - Nord Papirus|themes/icons/niivu/Nord%20Papirus.zip: Nord Papirus (by niivu)
+  - Nord Papirus NovaGalactic|themes/icons/niivu/Nord-Papirus-Nova-galactic.zip: Nord Papirus NovaGalactic (by niivu)
+  - Numix|themes/icons/niivu/numix.zip: Numix (by niivu)
+  - Numix Blue|themes/icons/niivu/numix-remix-blue.zip: Numix Blue (by niivu)
+  - Numix Green|themes/icons/niivu/numix-remix-green.zip: Numix Green (by niivu)
+  - Numix macOS|themes/icons/niivu/numix-remix-macos.zip: Numix macOS (by niivu)
+  - Numix Slate|themes/icons/niivu/numix-remix-slate.zip: Numix Slate (by niivu)
+  - Numix Windows|themes/icons/niivu/numix-remix-windows.zip: Numix Windows (by niivu)
+  - NUX|themes/icons/niivu/NUX.zip: NUX (by niivu)
+  - One Dark Pro|themes/icons/niivu/One%20Dark%20Pro.zip: One Dark Pro (by niivu)
+  - One Dark Pro Alt|themes/icons/niivu/One%20Dark%20Pro%20alt.zip: One Dark Pro Alt (by niivu)
+  - One UI4|themes/icons/niivu/OneUI4.zip: One UI4 (by niivu)
+  - OS X Minimalism|themes/icons/niivu/OS%20X%20Minimalism.zip: OS X Minimalism (by niivu)
+  - OS X Minimalism Symbolic|themes/icons/niivu/OS%20X%20Minimalism%20Symbolic.zip: OS X Minimalism Symbolic (by niivu)
+  - Paper|themes/icons/niivu/Paper.zip: Paper (by niivu)
+  - Papirus Black|themes/icons/niivu/Papirus%20Black.zip: Papirus Black (by niivu)
+  - Papirus BlueGrey|themes/icons/niivu/Papirus%20Blue%20Grey.zip: Papirus BlueGrey (by niivu)
+  - Papirus Blue|themes/icons/niivu/Papirus%20Blue.zip: Papirus Blue (by niivu)
+  - Papirus Brown|themes/icons/niivu/Papirus%20Brown.zip: Papirus Brown (by niivu)
+  - Papirus Deep Orange|themes/icons/niivu/Papirus%20Deep%20Orange.zip: Papirus Deep Orange (by niivu)
+  - Papirus Dracula|themes/icons/niivu/Papirus%20Dracula.zip: Papirus Dracula (by niivu)
+  - Papirus Grey|themes/icons/niivu/Papirus%20Grey.zip: Papirus Grey (by niivu)
+  - Papirus Magenta|themes/icons/niivu/Papirus%20Magenta.zip: Papirus Magenta (by niivu)
+  - Papirus Pink|themes/icons/niivu/Papirus%20Pink.zip: Papirus Pink (by niivu)
+  - Papirus Red|themes/icons/niivu/Papirus%20Red.zip: Papirus Red (by niivu)
+  - Papirus Solarized|themes/icons/niivu/Papirus%20Solarized.zip: Papirus Solarized (by niivu)
+  - Papirus Teal|themes/icons/niivu/Papirus%20Teal.zip: Papirus Teal (by niivu)
+  - Papirus Violet|themes/icons/niivu/Papirus%20Violet.zip: Papirus Violet (by niivu)
+  - Tokyo Night|themes/icons/niivu/Tokyo%20Night%20blank.zip: Tokyo Night (by niivu)
+  - Tokyo Night Papirus|themes/icons/niivu/Tokyo%20Night%20Papirus.zip: Tokyo Night Papirus (by niivu)
+  - Tokyo Night SE Papirus|themes/icons/niivu/Tokyo%20Night%20SE%20Papirus.zip: Tokyo Night SE Papirus (by niivu)
+  - Pink Folders|themes/icons/niivu/pink%20folders.zip: Pink Folders (by niivu)
+  - Post|themes/icons/niivu/post.zip: Post (by niivu)
+  - Pure Dark|themes/icons/niivu/Pure%20for%20dark%20or%20dark%20side%20panel%20themes.zip: Pure Dark (by niivu)
+  - Pure Light|themes/icons/niivu/Pure%20for%20light%20themes.zip: Pure Light (by niivu)
+  - Quixotic Day|themes/icons/niivu/Quixotic-SE%20Day%20AIO.zip: Quixotic Day (by niivu)
+  - Quixotic Dark|themes/icons/niivu/Quixotic-SE%20Dark%20AIO.zip: Quixotic Dark (by niivu)
+  - Quixotic Night|themes/icons/niivu/Quixotic-SE%20Night%20AIO.zip: Quixotic Night (by niivu)
+  - Rose Pine|themes/icons/niivu/Rose%20Pine.zip: Rose Pine (by niivu)
+  - Solarized Day AIO|themes/icons/niivu/solarized%20Day%20AIO.zip: Solarized Day AIO (by niivu)
+  - Solarized Night AIO|themes/icons/niivu/solarized%20Night%20AIO.zip: Solarized Night AIO (by niivu)
+  - Solus|themes/icons/niivu/Solus.zip: Solus (by niivu)
+  - Somatic Rebirth|themes/icons/niivu/Somatic%20Rebirth.zip: Somatic Rebirth (by niivu)
+  - Spaceshrooms Blue|themes/icons/niivu/space-shrooms-blue.zip: Spaceshrooms Blue (by niivu)
+  - Spaceshrooms Green|themes/icons/niivu/space-shrooms-green.zip: Spaceshrooms Green (by niivu)
+  - Spaceshrooms Yellow|themes/icons/niivu/space-shrooms-yellow.zip: Spaceshrooms Yellow (by niivu)
+  - Super Remix Blue|themes/icons/niivu/Super%20Remix%20Blue.zip: Super Remix Blue (by niivu)
+  - Super Remix Green|themes/icons/niivu/Super%20Remix%20Green.zip: Super Remix Green (by niivu)
+  - Super Remix Slate|themes/icons/niivu/Super%20Remix%20Slate.zip: Super Remix Slate (by niivu)
+  - Sweet Awesomeness|themes/icons/niivu/Sweet%20Awesomeness.zip: Sweet Awesomeness (by niivu)
+  - Sweetness Blue|themes/icons/niivu/Sweetness%20Blue%20folders.zip: Sweetness Blue (by niivu)
+  - Sweetness Neutral|themes/icons/niivu/Sweetness%20Neutral.zip: Sweetness Neutral (by niivu)
+  - Sweetness Original|themes/icons/niivu/Sweetness%20Original.zip: Sweetness Original (by niivu)
+  - Sweetness Pink|themes/icons/niivu/Sweetness%20Pink%20folders.zip: Sweetness Pink (by niivu)
+  - Sweetness Purple|themes/icons/niivu/Sweetness%20Purple%20folders.zip: Sweetness Purple (by niivu)
+  - Sweet Rainbow|themes/icons/niivu/Sweet-Rainbow.zip: Sweet Rainbow (by niivu)
+  - UOS|themes/icons/niivu/Uos%20Icon%20pack.zip: UOS (by niivu)
+  - Windows 11 New (default)|themes/icons/niivu/Windows%2011%20New%20%28default%29.zip: Windows 11 New (default) (by niivu)
+  - Windows 11 New Folders Blue|themes/icons/niivu/Windows%2011%20New%20Folders%20Blue.zip: Windows 11 New Folders Blue (by niivu)
+  - Windows 11 New Folders Green|themes/icons/niivu/Windows%2011%20New%20Folders%20Green.zip: Windows 11 New Folders Green (by niivu)
+  - Windows 11 New Folders Purple|themes/icons/niivu/Windows%2011%20New%20Folders%20Purple.zip: Windows 11 New Folders Purple (by niivu)
+  - Windows 11 New Folders Slate|themes/icons/niivu/Windows%2011%20New%20Folders%20Slate.zip: Windows 11 New Folders Slate (by niivu)
+  - Windows 11 New Folders Yellow|themes/icons/niivu/Windows%2011%20New%20Folders%20Yellow.zip: Windows 11 New Folders Yellow (by niivu)
+  - PaneVista|themes/icons/SoftwareType/PaneVista.zip: 'PaneVista (by SoftwareType, credit: ImSwordQueen)'
+  - Pane7|themes/icons/ImSwordQueen/Pane7.zip: Pane7 (by ImSwordQueen)
+  - Pane8.1|themes/icons/NicSonic/Pane8.1.zip: Pane8.1 (by NicSonic)
+  - Minecraft Axolotle|themes/icons/Wasiabbas4pk/Minecraft%20Axolotle.zip: 'Minecraft Axolotle (by WasiXGamer, credit: dalps/minecraft11)'
+  - Minecraft Fox|themes/icons/Wasiabbas4pk/Minecraft%20Fox.zip: 'Minecraft Fox (by WasiXGamer, credit: dalps/minecraft11)'
+  - Minecraft TNT|themes/icons/Wasiabbas4pk/Minecraft%20TNT.zip: 'Minecraft TNT (by WasiXGamer, credit: dalps/minecraft11)'
+  - Minecraft Panda|themes/icons/Wasiabbas4pk/Minecraft%20Panda.zip: 'Minecraft Panda (by WasiXGamer, credit: dalps/minecraft11)'
+  - Minecraft Creeper|themes/icons/Wasiabbas4pk/Minecraft%20Creeper.zip: 'Minecraft Creeper (by WasiXGamer, credit: dalps/minecraft11)'
+  - Minecraft Ender Dragon|themes/icons/Wasiabbas4pk/Minecraft%20Ender%20Dragon.zip: 'Minecraft Ender Dragon (by WasiXGamer, credit: dalps/minecraft11)'
+  - Minecraft Shulker (Blue)|themes/icons/Wasiabbas4pk/Minecraft%20Shulker%28Blue%29.zip: 'Minecraft Shulker (Blue) (by WasiXGamer, credit: dalps/minecraft11)'
+  - Minecraft Shulker (Black)|themes/icons/Wasiabbas4pk/Minecraft%20Shulker%28Black%29.zip: 'Minecraft Shulker (Black) (by WasiXGamer, credit: dalps/minecraft11)'
+- disableThumbnails: false
+  $name: Disable folder thumbnails
+  $description: >-
+    Make Explorer folders use a generic folder icon instead of showing
+    thumbnails of their contents. This works better with some icon themes.
+- allResourceRedirect: false
+  $name: Redirect all loaded resources (experimental)
+  $description: >-
+    Try to redirect all loaded resources, not only the supported resources
+    that are listed in the description.
+- themePaths: [""]
+  $name: Theme paths
+  $description: >-
+    Each path can be a folder with alternative resource files and the theme.ini
+    file, or the .ini theme file itself.
+- redirectionResourcePaths:
+  - - original: ""
+      $name: The redirected resource file
+      $description: >-
+        The original file from which resources are loaded. Can be a pattern
+        where '*' matches any number of characters and '?' matches any single
+        character.
+    - redirect: ""
+      $name: The redirection resource file
+      $description: The custom resource file that will be used instead.
+  $name: Redirection resource paths
+- themeFolder: ""
+  $name: Theme folder (deprecated)
+  $description: >-
+    A folder with alternative resource files and theme.ini.
+
+    This option will be removed in the future. Please use the new "Theme paths"
+    option above.
+*/
 // ==/WindhawkModSettings==
 
 #include <windhawk_utils.h>
@@ -2861,4 +3167,3 @@ BOOL Wh_ModSettingsChanged(BOOL* bReload) {
 
     return TRUE;
 }
-

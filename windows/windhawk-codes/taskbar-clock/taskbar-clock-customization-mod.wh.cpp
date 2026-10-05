@@ -99,6 +99,8 @@ patterns can be used:
   * `%vram_shared_total%` - total shared VRAM pool size in GB.
   * `%cpu_temp%` - CPU temperature in °C (average of all ACPI thermal zones).
   * `%cpu_temp_f%` - CPU temperature in °F (average of all ACPI thermal zones).
+  * `%gpu_temp%`, `%GPUTEMP%` - GPU temperature in °C (via WDDM D3DKMT driver interface).
+  * `%gpu_temp_f%`, `%GPUTEMP_F%` - GPU temperature in °F.
   * `%battery%` - battery level percentage.
   * `%battery_time%` - battery time remaining (charging time left / discharging
     time left, in h:mm format). If the value is always zero, you might need to
@@ -114,6 +116,7 @@ patterns can be used:
   * `%gpu_bar%`, `%gpu_bar5%`, `%gpu_bar8%`, `%gpu_bar10%`, `%gpu_spark%`, `%gpu_badge%` - GPU progress bars, trend graph & badge.
   * `%vram_bar%`, `%vram_bar5%`, `%vram_bar8%`, `%vram_bar10%`, `%vram_spark%` - VRAM progress bars & trend graph.
   * `%temp_bar%`, `%temp_bar5%`, `%temp_bar8%`, `%temp_bar10%`, `%temp_spark%`, `%temp_badge%` - CPU Temp progress bars, trend graph & thermal badge (❄️ 38°C, 🌡️ 65°C, 🔥 85°C).
+  * `%gpu_temp_bar%`, `%gpu_temp_bar5%`, `%gpu_temp_bar8%`, `%gpu_temp_bar10%`, `%gpu_temp_spark%`, `%gpu_temp_badge%` - GPU Temp progress bars, trend graph & badge.
   * `%battery_bar%`, `%battery_bar5%`, `%battery_bar8%`, `%battery_bar10%`, `%battery_spark%`, `%battery_badge%` - Battery progress bars, trend graph & power badge.
   * `%net_spark%`, `%disk_spark%` - Network & Disk transfer trend graphs.
   * `%bar:<metric>:<length>:<style>%` - custom progress bar (styles: smooth, block, pill, dot). Example: `%bar:cpu:8:smooth%`.
@@ -270,6 +273,17 @@ styles, such as the font color and size.
     $name: Update interval
     $description: >-
       The update interval, in seconds, of the system performance metrics.
+  - CpuMetricMethod: auto
+    $name: CPU usage metric method
+    $description: >-
+      Method to calculate overall CPU usage. 'auto' uses true processor busy time
+      (system-wide across all threads, 0-100%, immune to frequency scaling/turbo boost).
+      'processorTime' explicitly uses % Processor Time. 'processorUtility' uses
+      Task Manager Performance tab style (% Processor Utility, scaled by frequency).
+    $options:
+    - auto: Auto (True CPU time, rock-solid 0-100%)
+    - processorTime: Processor Time (Wall-clock busy percentage, 0-100%)
+    - processorUtility: Processor Utility (Task Manager style, frequency scaled)
   - NetworkAdapterName: ""
     $name: Network adapter name
     $description: >-
@@ -639,6 +653,12 @@ enum class PercentageFormat {
     noPadding,
 };
 
+enum class CpuMetricMethod {
+    autoDetect,
+    processorTime,
+    processorUtility,
+};
+
 struct DataCollectionSettings {
     NetworkMetricsFormat networkMetricsFormat;
     int networkMetricsFixedDecimals;
@@ -646,6 +666,7 @@ struct DataCollectionSettings {
     int diskMetricsFixedDecimals;
     PercentageFormat percentageFormat;
     int updateInterval;
+    CpuMetricMethod cpuMetricMethod;
     StringSetting networkAdapterName;
     StringSetting gpuAdapterName;
 };
@@ -815,6 +836,8 @@ FormattedString<FORMATTED_BUFFER_SIZE> g_vramSharedUsedFormatted;
 FormattedString<FORMATTED_BUFFER_SIZE> g_vramSharedTotalFormatted;
 FormattedString<FORMATTED_BUFFER_SIZE> g_cpuTempFormatted;
 FormattedString<FORMATTED_BUFFER_SIZE> g_cpuTempFFormatted;
+FormattedString<FORMATTED_BUFFER_SIZE> g_gpuTempFormatted;
+FormattedString<FORMATTED_BUFFER_SIZE> g_gpuTempFFormatted;
 FormattedString<FORMATTED_BUFFER_SIZE> g_batteryFormatted;
 FormattedString<FORMATTED_BUFFER_SIZE> g_batteryTimeFormatted;
 FormattedString<FORMATTED_BUFFER_SIZE> g_powerFormatted;
@@ -843,6 +866,7 @@ struct MetricHistories {
     RollingMetricHistory gpu;
     RollingMetricHistory vram;
     RollingMetricHistory temp;
+    RollingMetricHistory gpuTemp;
     RollingMetricHistory net;
     RollingMetricHistory disk;
     RollingMetricHistory battery;
@@ -881,6 +905,13 @@ FormattedString<FORMATTED_BUFFER_SIZE> g_cpuTempBar8Formatted;
 FormattedString<FORMATTED_BUFFER_SIZE> g_cpuTempBar10Formatted;
 FormattedString<FORMATTED_BUFFER_SIZE> g_cpuTempSparkFormatted;
 FormattedString<FORMATTED_BUFFER_SIZE> g_cpuTempBadgeFormatted;
+
+FormattedString<FORMATTED_BUFFER_SIZE> g_gpuTempBarFormatted;
+FormattedString<FORMATTED_BUFFER_SIZE> g_gpuTempBar5Formatted;
+FormattedString<FORMATTED_BUFFER_SIZE> g_gpuTempBar8Formatted;
+FormattedString<FORMATTED_BUFFER_SIZE> g_gpuTempBar10Formatted;
+FormattedString<FORMATTED_BUFFER_SIZE> g_gpuTempSparkFormatted;
+FormattedString<FORMATTED_BUFFER_SIZE> g_gpuTempBadgeFormatted;
 
 FormattedString<FORMATTED_BUFFER_SIZE> g_batteryBarFormatted;
 FormattedString<FORMATTED_BUFFER_SIZE> g_batteryBar5Formatted;
@@ -2123,8 +2154,9 @@ enum class MetricType {
 struct DxgiAdapterInfo {
     std::wstring description;
     std::wstring luid;
-    SIZE_T dedicated_video_memory;
-    SIZE_T shared_system_memory;
+    LUID raw_luid{};
+    SIZE_T dedicated_video_memory{};
+    SIZE_T shared_system_memory{};
 };
 
 std::optional<DxgiAdapterInfo> GetDxgiAdapterInfo(PCWSTR gpu_name, bool quiet) {
@@ -2192,6 +2224,7 @@ std::optional<DxgiAdapterInfo> GetDxgiAdapterInfo(PCWSTR gpu_name, bool quiet) {
     s_info = DxgiAdapterInfo{
         best_desc.Description,
         luid_str,
+        best_desc.AdapterLuid,
         best_desc.DedicatedVideoMemory,
         best_desc.SharedSystemMemory,
     };
@@ -2214,6 +2247,98 @@ std::optional<double> GetSharedVramTotalGb() {
     if (info && info->shared_system_memory > 0) {
         return (double)info->shared_system_memory / kGBInBytes;
     }
+    return std::nullopt;
+}
+
+typedef UINT D3DKMT_HANDLE;
+
+typedef struct _D3DKMT_OPENADAPTERFROMLUID {
+    LUID AdapterLuid;
+    D3DKMT_HANDLE hAdapter;
+} D3DKMT_OPENADAPTERFROMLUID;
+
+typedef struct _D3DKMT_QUERYADAPTERINFO {
+    D3DKMT_HANDLE hAdapter;
+    UINT Type;
+    VOID* pPrivateDriverData;
+    UINT PrivateDriverDataSize;
+} D3DKMT_QUERYADAPTERINFO;
+
+typedef struct _D3DKMT_CLOSEADAPTER {
+    D3DKMT_HANDLE hAdapter;
+} D3DKMT_CLOSEADAPTER;
+
+typedef struct _D3DKMT_ADAPTER_PERFDATA {
+    UINT32 PhysicalAdapterIndex;
+    ULONGLONG MemoryFrequency;
+    ULONGLONG MaxMemoryFrequency;
+    ULONGLONG MaxMemoryFrequencyOC;
+    ULONGLONG MemoryBandwidth;
+    ULONGLONG PCIEBandwidth;
+    ULONG FanRPM;
+    ULONG Power;
+    ULONG Temperature; // deci-Celsius (1 = 0.1°C)
+    UCHAR PowerStateOverride;
+} D3DKMT_ADAPTER_PERFDATA;
+
+typedef NTSTATUS (APIENTRY *PFND3DKMTOpenAdapterFromLuid)(D3DKMT_OPENADAPTERFROMLUID*);
+typedef NTSTATUS (APIENTRY *PFND3DKMTQueryAdapterInfo)(const D3DKMT_QUERYADAPTERINFO*);
+typedef NTSTATUS (APIENTRY *PFND3DKMTCloseAdapter)(const D3DKMT_CLOSEADAPTER*);
+
+std::optional<double> GetGpuTemperature(bool quiet = true) {
+    auto info = GetDxgiAdapterInfo(g_settings.dataCollection.gpuAdapterName, quiet);
+    if (!info) {
+        return std::nullopt;
+    }
+
+    static PFND3DKMTOpenAdapterFromLuid s_pfnOpen = nullptr;
+    static PFND3DKMTQueryAdapterInfo s_pfnQuery = nullptr;
+    static PFND3DKMTCloseAdapter s_pfnClose = nullptr;
+    static bool s_pfnInitialized = false;
+
+    if (!s_pfnInitialized) {
+        HMODULE hGdi32 = GetModuleHandleW(L"gdi32.dll");
+        if (!hGdi32) {
+            hGdi32 = LoadLibraryW(L"gdi32.dll");
+        }
+        if (hGdi32) {
+            s_pfnOpen = reinterpret_cast<PFND3DKMTOpenAdapterFromLuid>(
+                GetProcAddress(hGdi32, "D3DKMTOpenAdapterFromLuid"));
+            s_pfnQuery = reinterpret_cast<PFND3DKMTQueryAdapterInfo>(
+                GetProcAddress(hGdi32, "D3DKMTQueryAdapterInfo"));
+            s_pfnClose = reinterpret_cast<PFND3DKMTCloseAdapter>(
+                GetProcAddress(hGdi32, "D3DKMTCloseAdapter"));
+        }
+        s_pfnInitialized = true;
+    }
+
+    if (!s_pfnOpen || !s_pfnQuery || !s_pfnClose) {
+        return std::nullopt;
+    }
+
+    D3DKMT_OPENADAPTERFROMLUID openInfo{};
+    openInfo.AdapterLuid = info->raw_luid;
+    if (s_pfnOpen(&openInfo) != 0 || openInfo.hAdapter == 0) {
+        return std::nullopt;
+    }
+
+    D3DKMT_ADAPTER_PERFDATA perfData{};
+    D3DKMT_QUERYADAPTERINFO queryInfo{};
+    queryInfo.hAdapter = openInfo.hAdapter;
+    queryInfo.Type = 62; // KMTQAITYPE_ADAPTERPERFDATA
+    queryInfo.pPrivateDriverData = &perfData;
+    queryInfo.PrivateDriverDataSize = sizeof(perfData);
+
+    NTSTATUS status = s_pfnQuery(&queryInfo);
+
+    D3DKMT_CLOSEADAPTER closeInfo{};
+    closeInfo.hAdapter = openInfo.hAdapter;
+    s_pfnClose(&closeInfo);
+
+    if (status == 0 && perfData.Temperature > 0 && perfData.Temperature < 2000) {
+        return static_cast<double>(perfData.Temperature) / 10.0;
+    }
+
     return std::nullopt;
 }
 
@@ -2368,12 +2493,44 @@ bool QueryDataCollectionSession::AddMetric(MetricType type) {
             }
         }
     } else {
-        PDH_HCOUNTER counter;
-        PDH_STATUS hr = PdhAddEnglishCounter(query_, counter_path, 0, &counter);
-        if (SUCCEEDED(hr)) {
-            metric.counters.push_back({counter_path, counter});
+        if (type == MetricType::kCpu) {
+            static const PCWSTR kCpuCountersUtility[] = {
+                L"\\Processor Information(_Total)\\% Processor Utility",
+                L"\\Processor Information(0,_Total)\\% Processor Utility",
+                L"\\Processor(_Total)\\% Processor Time",
+                L"\\Processor Information(_Total)\\% Processor Time",
+                L"\\Processor Information(0,_Total)\\% Processor Time",
+            };
+            static const PCWSTR kCpuCountersTime[] = {
+                L"\\Processor(_Total)\\% Processor Time",
+                L"\\Processor Information(_Total)\\% Processor Time",
+                L"\\Processor Information(0,_Total)\\% Processor Time",
+                L"\\Processor Information(_Total)\\% Processor Utility",
+                L"\\Processor Information(0,_Total)\\% Processor Utility",
+            };
+            bool preferUtility = (g_settings.dataCollection.cpuMetricMethod != CpuMetricMethod::processorTime);
+            const PCWSTR* list = preferUtility ? kCpuCountersUtility : kCpuCountersTime;
+            size_t numCounters = preferUtility ? ARRAYSIZE(kCpuCountersUtility) : ARRAYSIZE(kCpuCountersTime);
+
+            for (size_t i = 0; i < numCounters; i++) {
+                PDH_HCOUNTER counter;
+                PDH_STATUS hr = PdhAddEnglishCounter(query_, list[i], 0, &counter);
+                if (SUCCEEDED(hr)) {
+                    metric.counters.push_back({list[i], counter});
+                    Wh_Log(L"Added CPU counter: %s", list[i]);
+                    break;
+                } else {
+                    Wh_Log(L"PdhAddEnglishCounter error %08X for %s", hr, list[i]);
+                }
+            }
         } else {
-            Wh_Log(L"PdhAddEnglishCounter error %08X", hr);
+            PDH_HCOUNTER counter;
+            PDH_STATUS hr = PdhAddEnglishCounter(query_, counter_path, 0, &counter);
+            if (SUCCEEDED(hr)) {
+                metric.counters.push_back({counter_path, counter});
+            } else {
+                Wh_Log(L"PdhAddEnglishCounter error %08X", hr);
+            }
         }
     }
 
@@ -2458,16 +2615,16 @@ QueryDataCollectionSession::QueryDataWithCount(MetricType type) {
         PDH_FMT_COUNTERVALUE val;
         PDH_STATUS hr = PdhGetFormattedCounterValue(
             entry.counter, PDH_FMT_DOUBLE, nullptr, &val);
-        if (SUCCEEDED(hr)) {
+        if (SUCCEEDED(hr) && val.CStatus == ERROR_SUCCESS) {
             // Skip dead thermal zones that report implausible values (below 200
-            // Kelvin / -73°C), which would skew the average.
-            if (type == MetricType::kCpuTemp && val.doubleValue < 200) {
+            // Kelvin / -73°C or above 450 Kelvin / 176°C), which skew the average.
+            if (type == MetricType::kCpuTemp && (val.doubleValue < 200.0 || val.doubleValue > 450.0)) {
                 continue;
             }
 
             sum += val.doubleValue;
             count++;
-        } else {
+        } else if (FAILED(hr)) {
             Wh_Log(L"PdhGetFormattedCounterValue error %08X", hr);
         }
     }
@@ -2594,10 +2751,14 @@ std::wstring_view QueryDataCollectionSession::ExtractGpuLuid(
     }
     auto luid_start = luid_pos + 5;  // Skip "luid_"
     auto phys_pos = instance.find(L"_phys_", luid_start);
-    if (phys_pos == std::wstring_view::npos) {
-        return {};
+    if (phys_pos != std::wstring_view::npos) {
+        return instance.substr(luid_start, phys_pos - luid_start);
     }
-    return instance.substr(luid_start, phys_pos - luid_start);
+    auto delim_pos = instance.find(L'_', luid_start + 11);
+    if (delim_pos != std::wstring_view::npos) {
+        return instance.substr(luid_start, delim_pos - luid_start);
+    }
+    return instance.substr(luid_start);
 }
 
 // Filter network paths by adapter name (substring match).
@@ -2691,6 +2852,8 @@ QueryDataCollectionSession::FilterGpuPathsByAdapterName(
 
 std::optional<QueryDataCollectionSession> g_dataCollectionSession;
 DWORD g_dataCollectionLastFormatIndex;
+std::optional<double> g_lastCpuPercent;
+std::optional<double> g_lastGpuTemperature;
 
 // Media player helper functions
 
@@ -2977,6 +3140,9 @@ void DataCollectionSessionInit() {
     metrics[static_cast<int>(MetricType::kCpuTemp)] =
         IsStrInDateTimePatternSettings(L"%cpu_temp%") ||
         IsStrInDateTimePatternSettings(L"%cpu_temp_f%") ||
+        IsStrInDateTimePatternSettings(L"%CPUTEMP%") ||
+        IsStrInDateTimePatternSettings(L"%CPUTEMP_F%") ||
+        IsStrInDateTimePatternSettings(L"%cputemp%") ||
         IsStrInDateTimePatternSettings(L"temp");
 
     if (!std::any_of(std::begin(metrics), std::end(metrics),
@@ -3005,6 +3171,8 @@ void DataCollectionSessionInit() {
 void DataCollectionSessionUninit() {
     g_dataCollectionSession.reset();
     g_dataCollectionLastFormatIndex = 0;
+    g_lastCpuPercent.reset();
+    g_lastGpuTemperature.reset();
 }
 
 bool IsMediaPatternUsed() {
@@ -3117,53 +3285,133 @@ DWORD GetDataCollectionFormatIndex() {
     return static_cast<DWORD>(formatTimeInt.QuadPart / interval);
 }
 
+std::optional<double> SampleSystemCpuTimes() {
+    static ULONGLONG s_prevIdleTime = 0;
+    static ULONGLONG s_prevKernelTime = 0;
+    static ULONGLONG s_prevUserTime = 0;
+    static ULONGLONG s_prevSampleTick = 0;
+    static std::optional<double> s_lastCpuPercent;
+
+    ULONGLONG currentTick = GetTickCount64();
+    if (s_prevSampleTick != 0 && (currentTick - s_prevSampleTick) < 100) {
+        return s_lastCpuPercent;
+    }
+
+    FILETIME idleTime{}, kernelTime{}, userTime{};
+    if (!GetSystemTimes(&idleTime, &kernelTime, &userTime)) {
+        return s_lastCpuPercent;
+    }
+
+    auto FileTimeToULL = [](const FILETIME& ft) -> ULONGLONG {
+        return (static_cast<ULONGLONG>(ft.dwHighDateTime) << 32) | ft.dwLowDateTime;
+    };
+
+    ULONGLONG idle = FileTimeToULL(idleTime);
+    ULONGLONG kernel = FileTimeToULL(kernelTime);
+    ULONGLONG user = FileTimeToULL(userTime);
+
+    if (s_prevKernelTime != 0 || s_prevUserTime != 0) {
+        ULONGLONG sysKernel = (kernel >= s_prevKernelTime) ? (kernel - s_prevKernelTime) : 0;
+        ULONGLONG sysUser = (user >= s_prevUserTime) ? (user - s_prevUserTime) : 0;
+        ULONGLONG sysTotal = sysKernel + sysUser;
+        ULONGLONG sysIdle = (idle >= s_prevIdleTime) ? (idle - s_prevIdleTime) : 0;
+
+        if (sysTotal > 0) {
+            if (sysTotal >= sysIdle) {
+                double pct = (static_cast<double>(sysTotal - sysIdle) * 100.0) / static_cast<double>(sysTotal);
+                s_lastCpuPercent = std::clamp(pct, 0.0, 100.0);
+            } else {
+                s_lastCpuPercent = 0.0;
+            }
+        }
+    }
+
+    s_prevIdleTime = idle;
+    s_prevKernelTime = kernel;
+    s_prevUserTime = user;
+    s_prevSampleTick = currentTick;
+
+    return s_lastCpuPercent;
+}
+
 std::optional<MEMORYSTATUSEX> GetRamStatus();
 
 void DataCollectionSampleIfNeeded() {
     DWORD dataCollectionFormatIndex = GetDataCollectionFormatIndex();
     if (g_dataCollectionLastFormatIndex != dataCollectionFormatIndex) {
+        auto sysTimesCpu = SampleSystemCpuTimes();
+
         if (g_dataCollectionSession) {
             g_dataCollectionSession->UpdateAllMetrics();
             g_dataCollectionSession->SampleData();
 
-            if (auto cpuVal = g_dataCollectionSession->QueryData(MetricType::kCpu)) {
-                g_metricHistories.cpu.Push(*cpuVal);
+            std::optional<double> cpuVal;
+            if (g_settings.dataCollection.cpuMetricMethod == CpuMetricMethod::processorTime) {
+                cpuVal = sysTimesCpu;
+                if (!cpuVal) {
+                    cpuVal = g_dataCollectionSession->QueryDataAvg(MetricType::kCpu);
+                }
+            } else { // autoDetect & processorUtility: matches Windows Task Manager (% Processor Utility)
+                cpuVal = g_dataCollectionSession->QueryDataAvg(MetricType::kCpu);
+                if (!cpuVal) {
+                    cpuVal = sysTimesCpu;
+                }
             }
+
+            if (cpuVal) {
+                g_lastCpuPercent = std::clamp(*cpuVal, 0.0, 100.0);
+                g_metricHistories.cpu.Push(*g_lastCpuPercent);
+            }
+
             if (auto gpuVal = g_dataCollectionSession->QueryData(MetricType::kGpuUsage)) {
-                g_metricHistories.gpu.Push(*gpuVal);
+                g_metricHistories.gpu.Push(std::clamp(*gpuVal, 0.0, 100.0));
             }
-            if (auto tempVal = g_dataCollectionSession->QueryData(MetricType::kCpuTemp)) {
-                g_metricHistories.temp.Push(*tempVal);
+            if (auto tempVal = g_dataCollectionSession->QueryDataAvg(MetricType::kCpuTemp)) {
+                double celsius = *tempVal > 200.0 ? (*tempVal - 273.15) : *tempVal;
+                g_metricHistories.temp.Push(std::clamp(celsius, 0.0, 150.0));
             }
             if (auto usedBytes = g_dataCollectionSession->QueryData(MetricType::kVramUsed)) {
                 if (auto totalGb = GetDedicatedVramTotalGb(); totalGb && *totalGb > 0) {
                     double usedGb = *usedBytes / kGBInBytes;
-                    g_metricHistories.vram.Push((usedGb / *totalGb) * 100.0);
+                    double vramPct = std::clamp((usedGb / *totalGb) * 100.0, 0.0, 100.0);
+                    g_metricHistories.vram.Push(vramPct);
                 }
             }
             auto ul = g_dataCollectionSession->QueryData(MetricType::kUploadSpeed);
             auto dl = g_dataCollectionSession->QueryData(MetricType::kDownloadSpeed);
-            if (ul && dl) {
-                double totalMbps = ((*ul + *dl) * 8.0) / (1024.0 * 1024.0);
-                double netPct = std::min(100.0, (totalMbps / 50.0) * 100.0);
+            if (ul || dl) {
+                double totalBytes = (ul ? *ul : 0.0) + (dl ? *dl : 0.0);
+                double totalMbps = (totalBytes * 8.0) / (1024.0 * 1024.0);
+                double netPct = std::clamp((totalMbps / 50.0) * 100.0, 0.0, 100.0);
                 g_metricHistories.net.Push(netPct);
             }
             auto dr = g_dataCollectionSession->QueryData(MetricType::kDiskReadSpeed);
             auto dw = g_dataCollectionSession->QueryData(MetricType::kDiskWriteSpeed);
-            if (dr && dw) {
-                double totalMBs = (*dr + *dw) / (1024.0 * 1024.0);
-                double diskPct = std::min(100.0, (totalMBs / 100.0) * 100.0);
+            if (dr || dw) {
+                double totalBytes = (dr ? *dr : 0.0) + (dw ? *dw : 0.0);
+                double totalMBs = totalBytes / (1024.0 * 1024.0);
+                double diskPct = std::clamp((totalMBs / 100.0) * 100.0, 0.0, 100.0);
                 g_metricHistories.disk.Push(diskPct);
+            }
+        } else {
+            if (sysTimesCpu) {
+                g_lastCpuPercent = std::clamp(*sysTimesCpu, 0.0, 100.0);
+                g_metricHistories.cpu.Push(*g_lastCpuPercent);
             }
         }
 
+        g_lastGpuTemperature = GetGpuTemperature(true);
+        if (g_lastGpuTemperature) {
+            g_metricHistories.gpuTemp.Push(std::clamp(*g_lastGpuTemperature, 0.0, 150.0));
+        }
+
         if (auto ramStatus = GetRamStatus()) {
-            g_metricHistories.ram.Push(static_cast<double>(ramStatus->dwMemoryLoad));
+            g_metricHistories.ram.Push(std::clamp(static_cast<double>(ramStatus->dwMemoryLoad), 0.0, 100.0));
         }
 
         SYSTEM_POWER_STATUS pwr{};
         if (GetSystemPowerStatus(&pwr)) {
-            g_metricHistories.battery.Push(static_cast<double>(pwr.BatteryLifePercent));
+            g_metricHistories.battery.Push(std::clamp(static_cast<double>(pwr.BatteryLifePercent), 0.0, 100.0));
         }
 
         g_dataCollectionLastFormatIndex = dataCollectionFormatIndex;
@@ -3235,6 +3483,10 @@ void FormatTransferSpeed(double val,
                          int fixedDecimals,
                          PWSTR buffer,
                          size_t bufferSize) {
+    if (std::isnan(val) || std::isinf(val) || val < 0.0) {
+        val = 0.0;
+    }
+
     constexpr int kKBInBytes = 1024;
     constexpr int kMBInBytes = 1024 * kKBInBytes;
     constexpr int kKbitInBytes = 1000 / 8;
@@ -3320,9 +3572,7 @@ void FormatDiskTransferSpeed(double val, PWSTR buffer, size_t bufferSize) {
 }
 
 void FormatPercentValue(int val, PWSTR buffer, size_t bufferSize, int maxVal) {
-    if (val > maxVal) {
-        val = maxVal;
-    }
+    val = std::clamp(val, 0, maxVal);
 
     PCWSTR padding = L"";
     PCWSTR suffix = L"";
@@ -3479,13 +3729,39 @@ PCWSTR GetDiskTotalSpeedFormatted() {
         });
 }
 
+double GetCpuPercent() {
+    DataCollectionSampleIfNeeded();
+    if (g_lastCpuPercent) {
+        return *g_lastCpuPercent;
+    }
+    if (g_settings.dataCollection.cpuMetricMethod == CpuMetricMethod::processorTime) {
+        if (auto sys = SampleSystemCpuTimes()) {
+            return std::clamp(*sys, 0.0, 100.0);
+        }
+        if (g_dataCollectionSession) {
+            if (auto val = g_dataCollectionSession->QueryDataAvg(MetricType::kCpu)) {
+                return std::clamp(*val, 0.0, 100.0);
+            }
+        }
+    } else { // autoDetect & processorUtility: matches Windows Task Manager (% Processor Utility)
+        if (g_dataCollectionSession) {
+            if (auto val = g_dataCollectionSession->QueryDataAvg(MetricType::kCpu)) {
+                return std::clamp(*val, 0.0, 100.0);
+            }
+        }
+        if (auto sys = SampleSystemCpuTimes()) {
+            return std::clamp(*sys, 0.0, 100.0);
+        }
+    }
+    return 0.0;
+}
+
 PCWSTR GetCpuFormatted() {
     DataCollectionSampleIfNeeded();
     return GetMetricFormatted(g_cpuFormatted, [](PWSTR buffer, size_t bufferSize) {
-        if (!g_dataCollectionSession) return false;
-        std::optional<double> val = g_dataCollectionSession->QueryData(MetricType::kCpu);
-        if (!val) return false;
-        FormatPercentValue(static_cast<int>(*val), buffer, bufferSize, 99);
+        double pct = GetCpuPercent();
+        int pctInt = std::clamp(static_cast<int>(std::round(pct)), 0, 99);
+        FormatPercentValue(pctInt, buffer, bufferSize, 99);
         return true;
     });
 }
@@ -3691,8 +3967,8 @@ PCWSTR GetCpuTempFormatted() {
             if (!g_dataCollectionSession) return false;
             auto kelvin = g_dataCollectionSession->QueryDataAvg(MetricType::kCpuTemp);
             if (!kelvin) return false;
-            int celsius = static_cast<int>(*kelvin - 273.15);
-            swprintf_s(buffer, bufferSize, L"%d\u00B0C", celsius);
+            double celsius = *kelvin > 200.0 ? (*kelvin - 273.15) : *kelvin;
+            swprintf_s(buffer, bufferSize, L"%d\u00B0C", static_cast<int>(std::round(celsius)));
             return true;
         });
 }
@@ -3709,10 +3985,47 @@ PCWSTR GetCpuTempFFormatted() {
             if (!kelvin) {
                 return false;
             }
-            double celsius = *kelvin - 273.15;
+            double celsius = *kelvin > 200.0 ? (*kelvin - 273.15) : *kelvin;
             double fahrenheit = celsius * 9.0 / 5.0 + 32.0;
             swprintf_s(buffer, bufferSize, L"%d\u00B0F",
-                       static_cast<int>(fahrenheit));
+                       static_cast<int>(std::round(fahrenheit)));
+            return true;
+        });
+}
+
+std::optional<double> GetGpuTempDouble() {
+    DataCollectionSampleIfNeeded();
+    if (g_lastGpuTemperature) {
+        return g_lastGpuTemperature;
+    }
+    return GetGpuTemperature(true);
+}
+
+PCWSTR GetGpuTempFormatted() {
+    DataCollectionSampleIfNeeded();
+    return GetMetricFormatted(
+        g_gpuTempFormatted, [](PWSTR buffer, size_t bufferSize) {
+            auto val = GetGpuTempDouble();
+            if (!val) {
+                return false;
+            }
+            swprintf_s(buffer, bufferSize, L"%d\u00B0C",
+                       static_cast<int>(std::round(*val)));
+            return true;
+        });
+}
+
+PCWSTR GetGpuTempFFormatted() {
+    DataCollectionSampleIfNeeded();
+    return GetMetricFormatted(
+        g_gpuTempFFormatted, [](PWSTR buffer, size_t bufferSize) {
+            auto val = GetGpuTempDouble();
+            if (!val) {
+                return false;
+            }
+            double fahrenheit = *val * 9.0 / 5.0 + 32.0;
+            swprintf_s(buffer, bufferSize, L"%d\u00B0F",
+                       static_cast<int>(std::round(fahrenheit)));
             return true;
         });
 }
@@ -3966,7 +4279,9 @@ std::wstring FormatSparkline(const RollingMetricHistory& history, size_t request
 
 std::wstring FormatMetricBadge(std::wstring_view metricType, double value) {
     wchar_t buf[64];
-    if (metricType == L"temp" || metricType == L"cpu_temp") {
+    if (metricType == L"temp" || metricType == L"cpu_temp" || metricType == L"cputemp" ||
+        metricType == L"CPUTEMP" || metricType == L"gpu_temp" || metricType == L"gputemp" ||
+        metricType == L"GPUTEMP") {
         if (value < 55.0) {
             swprintf_s(buf, L"❄️ %.0f°C", value);
         } else if (value < 75.0) {
@@ -3996,23 +4311,16 @@ std::wstring FormatMetricBadge(std::wstring_view metricType, double value) {
     return buf;
 }
 
-double GetCpuPercent() {
-    DataCollectionSampleIfNeeded();
-    if (!g_dataCollectionSession) return 0.0;
-    auto val = g_dataCollectionSession->QueryData(MetricType::kCpu);
-    return val ? *val : 0.0;
-}
-
 double GetRamPercent() {
     auto status = GetRamStatus();
-    return status ? static_cast<double>(status->dwMemoryLoad) : 0.0;
+    return status ? std::clamp(static_cast<double>(status->dwMemoryLoad), 0.0, 100.0) : 0.0;
 }
 
 double GetGpuPercent() {
     DataCollectionSampleIfNeeded();
     if (!g_dataCollectionSession) return 0.0;
     auto val = g_dataCollectionSession->QueryData(MetricType::kGpuUsage);
-    return val ? *val : 0.0;
+    return val ? std::clamp(*val, 0.0, 100.0) : 0.0;
 }
 
 double GetVramPercent() {
@@ -4022,14 +4330,16 @@ double GetVramPercent() {
     auto totalGb = GetDedicatedVramTotalGb();
     if (!usedBytes || !totalGb || *totalGb <= 0) return 0.0;
     double usedGb = *usedBytes / kGBInBytes;
-    return (usedGb / *totalGb) * 100.0;
+    return std::clamp((usedGb / *totalGb) * 100.0, 0.0, 100.0);
 }
 
 double GetCpuTempDouble() {
     DataCollectionSampleIfNeeded();
     if (!g_dataCollectionSession) return 0.0;
-    auto val = g_dataCollectionSession->QueryData(MetricType::kCpuTemp);
-    return val ? *val : 0.0;
+    auto val = g_dataCollectionSession->QueryDataAvg(MetricType::kCpuTemp);
+    if (!val) return 0.0;
+    double celsius = *val > 200.0 ? (*val - 273.15) : *val;
+    return std::clamp(celsius, 0.0, 150.0);
 }
 
 double GetBatteryPercent() {
@@ -4045,7 +4355,8 @@ double GetMetricNumericValue(std::wstring_view metric) {
     if (metric == L"ram") return GetRamPercent();
     if (metric == L"gpu") return GetGpuPercent();
     if (metric == L"vram") return GetVramPercent();
-    if (metric == L"temp" || metric == L"cpu_temp") return GetCpuTempDouble();
+    if (metric == L"temp" || metric == L"cpu_temp" || metric == L"cputemp" || metric == L"CPUTEMP") return GetCpuTempDouble();
+    if (metric == L"gpu_temp" || metric == L"gputemp" || metric == L"GPUTEMP") return GetGpuTempDouble().value_or(0.0);
     if (metric == L"battery") return GetBatteryPercent();
     return 0.0;
 }
@@ -4055,7 +4366,8 @@ RollingMetricHistory* GetMetricHistory(std::wstring_view metric) {
     if (metric == L"ram") return &g_metricHistories.ram;
     if (metric == L"gpu") return &g_metricHistories.gpu;
     if (metric == L"vram") return &g_metricHistories.vram;
-    if (metric == L"temp" || metric == L"cpu_temp") return &g_metricHistories.temp;
+    if (metric == L"temp" || metric == L"cpu_temp" || metric == L"cputemp" || metric == L"CPUTEMP") return &g_metricHistories.temp;
+    if (metric == L"gpu_temp" || metric == L"gputemp" || metric == L"GPUTEMP") return &g_metricHistories.gpuTemp;
     if (metric == L"net" || metric == L"network") return &g_metricHistories.net;
     if (metric == L"disk") return &g_metricHistories.disk;
     if (metric == L"battery") return &g_metricHistories.battery;
@@ -4246,6 +4558,44 @@ PCWSTR GetCpuTempBadgeFormatted() {
     });
 }
 
+// GPU Temp
+PCWSTR GetGpuTempBarFormatted() {
+    return GetMetricFormatted(g_gpuTempBarFormatted, [](PWSTR buf, size_t sz) {
+        wcscpy_s(buf, sz, FormatProgressBar(GetGpuTempDouble().value_or(0.0), 8, BarStyle::Smooth).c_str());
+        return true;
+    });
+}
+PCWSTR GetGpuTempBar5Formatted() {
+    return GetMetricFormatted(g_gpuTempBar5Formatted, [](PWSTR buf, size_t sz) {
+        wcscpy_s(buf, sz, FormatProgressBar(GetGpuTempDouble().value_or(0.0), 5, BarStyle::Smooth).c_str());
+        return true;
+    });
+}
+PCWSTR GetGpuTempBar8Formatted() {
+    return GetMetricFormatted(g_gpuTempBar8Formatted, [](PWSTR buf, size_t sz) {
+        wcscpy_s(buf, sz, FormatProgressBar(GetGpuTempDouble().value_or(0.0), 8, BarStyle::Smooth).c_str());
+        return true;
+    });
+}
+PCWSTR GetGpuTempBar10Formatted() {
+    return GetMetricFormatted(g_gpuTempBar10Formatted, [](PWSTR buf, size_t sz) {
+        wcscpy_s(buf, sz, FormatProgressBar(GetGpuTempDouble().value_or(0.0), 10, BarStyle::Smooth).c_str());
+        return true;
+    });
+}
+PCWSTR GetGpuTempSparkFormatted() {
+    return GetMetricFormatted(g_gpuTempSparkFormatted, [](PWSTR buf, size_t sz) {
+        wcscpy_s(buf, sz, FormatSparkline(g_metricHistories.gpuTemp, 8).c_str());
+        return true;
+    });
+}
+PCWSTR GetGpuTempBadgeFormatted() {
+    return GetMetricFormatted(g_gpuTempBadgeFormatted, [](PWSTR buf, size_t sz) {
+        wcscpy_s(buf, sz, FormatMetricBadge(L"gpu_temp", GetGpuTempDouble().value_or(0.0)).c_str());
+        return true;
+    });
+}
+
 // Battery
 PCWSTR GetBatteryBarFormatted() {
     return GetMetricFormatted(g_batteryBarFormatted, [](PWSTR buf, size_t sz) {
@@ -4330,6 +4680,13 @@ PCWSTR GetTempColorFormatted() {
     if (val < 80.0) return L"[#FB923C]";
     return L"[#EF4444]";
 }
+PCWSTR GetGpuTempColorFormatted() {
+    double val = GetGpuTempDouble().value_or(0.0);
+    if (val < 45.0) return L"[#38BDF8]";
+    if (val < 65.0) return L"[#10B981]";
+    if (val < 80.0) return L"[#FB923C]";
+    return L"[#EF4444]";
+}
 PCWSTR GetBatteryColorFormatted() {
     double val = GetBatteryPercent();
     if (val <= 20.0) return L"[#EF4444]";
@@ -4355,6 +4712,11 @@ size_t ResolveFormatToken(
         {L"%vram_color%"sv, GetVramColorFormatted},
         {L"%cpu_temp_color%"sv, GetTempColorFormatted},
         {L"%temp_color%"sv, GetTempColorFormatted},
+        {L"%CPUTEMP_COLOR%"sv, GetTempColorFormatted},
+        {L"%cputemp_color%"sv, GetTempColorFormatted},
+        {L"%gpu_temp_color%"sv, GetGpuTempColorFormatted},
+        {L"%GPUTEMP_COLOR%"sv, GetGpuTempColorFormatted},
+        {L"%gputemp_color%"sv, GetGpuTempColorFormatted},
         {L"%battery_color%"sv, GetBatteryColorFormatted},
         {L"%color_end%"sv, GetColorEndFormatted},
         {L"%/c%"sv, GetColorEndFormatted},
@@ -4399,6 +4761,37 @@ size_t ResolveFormatToken(
         {L"%temp_bar%"sv, GetCpuTempBarFormatted},
         {L"%temp_spark%"sv, GetCpuTempSparkFormatted},
         {L"%temp_badge%"sv, GetCpuTempBadgeFormatted},
+        {L"%CPUTEMP_BAR10%"sv, GetCpuTempBar10Formatted},
+        {L"%CPUTEMP_BAR5%"sv, GetCpuTempBar5Formatted},
+        {L"%CPUTEMP_BAR8%"sv, GetCpuTempBar8Formatted},
+        {L"%CPUTEMP_BAR%"sv, GetCpuTempBarFormatted},
+        {L"%CPUTEMP_SPARK%"sv, GetCpuTempSparkFormatted},
+        {L"%CPUTEMP_BADGE%"sv, GetCpuTempBadgeFormatted},
+        {L"%cputemp_bar10%"sv, GetCpuTempBar10Formatted},
+        {L"%cputemp_bar5%"sv, GetCpuTempBar5Formatted},
+        {L"%cputemp_bar8%"sv, GetCpuTempBar8Formatted},
+        {L"%cputemp_bar%"sv, GetCpuTempBarFormatted},
+        {L"%cputemp_spark%"sv, GetCpuTempSparkFormatted},
+        {L"%cputemp_badge%"sv, GetCpuTempBadgeFormatted},
+
+        {L"%gpu_temp_bar10%"sv, GetGpuTempBar10Formatted},
+        {L"%gpu_temp_bar5%"sv, GetGpuTempBar5Formatted},
+        {L"%gpu_temp_bar8%"sv, GetGpuTempBar8Formatted},
+        {L"%gpu_temp_bar%"sv, GetGpuTempBarFormatted},
+        {L"%gpu_temp_spark%"sv, GetGpuTempSparkFormatted},
+        {L"%gpu_temp_badge%"sv, GetGpuTempBadgeFormatted},
+        {L"%GPUTEMP_BAR10%"sv, GetGpuTempBar10Formatted},
+        {L"%GPUTEMP_BAR5%"sv, GetGpuTempBar5Formatted},
+        {L"%GPUTEMP_BAR8%"sv, GetGpuTempBar8Formatted},
+        {L"%GPUTEMP_BAR%"sv, GetGpuTempBarFormatted},
+        {L"%GPUTEMP_SPARK%"sv, GetGpuTempSparkFormatted},
+        {L"%GPUTEMP_BADGE%"sv, GetGpuTempBadgeFormatted},
+        {L"%gputemp_bar10%"sv, GetGpuTempBar10Formatted},
+        {L"%gputemp_bar5%"sv, GetGpuTempBar5Formatted},
+        {L"%gputemp_bar8%"sv, GetGpuTempBar8Formatted},
+        {L"%gputemp_bar%"sv, GetGpuTempBarFormatted},
+        {L"%gputemp_spark%"sv, GetGpuTempSparkFormatted},
+        {L"%gputemp_badge%"sv, GetGpuTempBadgeFormatted},
 
         {L"%battery_bar10%"sv, GetBatteryBar10Formatted},
         {L"%battery_bar5%"sv, GetBatteryBar5Formatted},
@@ -4438,8 +4831,28 @@ size_t ResolveFormatToken(
         {L"%vram_shared%"sv, GetVramSharedFormatted},
         {L"%vram_shared_used%"sv, GetVramSharedUsedFormatted},
         {L"%vram_shared_total%"sv, GetVramSharedTotalFormatted},
-        {L"%cpu_temp%"sv, GetCpuTempFormatted},
+
         {L"%cpu_temp_f%"sv, GetCpuTempFFormatted},
+        {L"%cpu_temp_c%"sv, GetCpuTempFormatted},
+        {L"%cpu_temp%"sv, GetCpuTempFormatted},
+        {L"%CPUTEMP_F%"sv, GetCpuTempFFormatted},
+        {L"%CPUTEMP_C%"sv, GetCpuTempFormatted},
+        {L"%CPUTEMP%"sv, GetCpuTempFormatted},
+        {L"%cputemp_f%"sv, GetCpuTempFFormatted},
+        {L"%cputemp_c%"sv, GetCpuTempFormatted},
+        {L"%cputemp%"sv, GetCpuTempFormatted},
+        {L"%temp%"sv, GetCpuTempFormatted},
+        {L"%TEMP%"sv, GetCpuTempFormatted},
+
+        {L"%gpu_temp_f%"sv, GetGpuTempFFormatted},
+        {L"%gpu_temp_c%"sv, GetGpuTempFormatted},
+        {L"%gpu_temp%"sv, GetGpuTempFormatted},
+        {L"%GPUTEMP_F%"sv, GetGpuTempFFormatted},
+        {L"%GPUTEMP_C%"sv, GetGpuTempFormatted},
+        {L"%GPUTEMP%"sv, GetGpuTempFormatted},
+        {L"%gputemp_f%"sv, GetGpuTempFFormatted},
+        {L"%gputemp_c%"sv, GetGpuTempFormatted},
+        {L"%gputemp%"sv, GetGpuTempFormatted},
         {L"%battery%"sv, GetBatteryFormatted},
         {L"%battery_time%"sv, GetBatteryTimeFormatted},
         {L"%power%"sv, GetPowerFormatted},
@@ -6650,6 +7063,17 @@ void LoadSettings() {
 
     g_settings.dataCollection.updateInterval =
         Wh_GetIntSetting(L"DataCollection.UpdateInterval");
+
+    g_settings.dataCollection.cpuMetricMethod = CpuMetricMethod::autoDetect;
+    StringSetting cpuMetricMethod =
+        StringSetting::make(L"DataCollection.CpuMetricMethod");
+    if (wcscmp(cpuMetricMethod, L"processorTime") == 0) {
+        g_settings.dataCollection.cpuMetricMethod =
+            CpuMetricMethod::processorTime;
+    } else if (wcscmp(cpuMetricMethod, L"processorUtility") == 0) {
+        g_settings.dataCollection.cpuMetricMethod =
+            CpuMetricMethod::processorUtility;
+    }
 
     g_settings.dataCollection.networkAdapterName =
         StringSetting::make(L"DataCollection.NetworkAdapterName");

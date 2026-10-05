@@ -1,9 +1,9 @@
 theme: LayerMicaUI
 styleConstants:
-  - ""
+  - ''
 controlStyles:
-  - target: ""
+  - target: ''
     styles:
-      - ""
+      - ''
 themeResourceVariables:
-  - ""
+  - ''

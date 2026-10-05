@@ -96,15 +96,13 @@ speech = f"""
 
 The current time is {current_time}.
 
-All systems are operational.
+All systems are operational and back online.
 
 There are currently {processes} running processes.
 
 Processor usage is {cpu:.0f} percent.
 
 Memory usage is {memory:.0f} percent.
-
-Disk usage is {disk:.0f} percent.
 
 {battery_text}
 

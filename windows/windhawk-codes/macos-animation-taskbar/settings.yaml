@@ -7,4 +7,4 @@ unhide_duration_ms: 450
 engine: classic
 tile_count: 32
 excluded_programs:
-  - ""
+  - ''

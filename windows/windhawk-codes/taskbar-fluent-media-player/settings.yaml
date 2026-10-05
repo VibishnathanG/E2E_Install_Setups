@@ -29,8 +29,8 @@ MainSettings:
     swapTitleArtist: 0
     emptyTitleText: 📻Untitled
     noMediaTitleText: Not Playing
-    emptyArtistText: ""
-    noMediaArtistText: ""
+    emptyArtistText: ''
+    noMediaArtistText: ''
   MediaButtonsSettings:
     showMediaButtons: 1
     mediaButtons:
@@ -63,7 +63,7 @@ AppearanceSettings:
     micaOpacity: 50
     blurOpacity: 65
     blurRadius: 11
-    cornerRadius: "40"
+    cornerRadius: '40'
     enablePlayerHoverEffect: auto
     enableMediaButtonsHoverEffect: auto
     enableHoverAnimation: 1
@@ -71,7 +71,7 @@ AppearanceSettings:
     iconStyle: fluent_filled
     buttonSpacing: -5
     buttonIconSize: 12
-    buttonCornerRadius: "4"
+    buttonCornerRadius: '4'
     buttonColor: 0 0 0$255 255 255
     buttonColorOpacity: 100
   TitleTextStyleSettings:
@@ -79,18 +79,18 @@ AppearanceSettings:
     titleColorOpacity: 100
     titleFont: aptos
     titleFontSize: 12
-    titleFontFamily: ""
-    titleFontWeight: ""
-    titleFontStyle: ""
+    titleFontFamily: ''
+    titleFontWeight: ''
+    titleFontStyle: ''
     titleCharacterSpacing: 0
   ArtistTextStyleSettings:
     artistColor: 0 0 0$255 255 255
     artistColorOpacity: 80
     artistFont: segoe_ui_variable
     artistFontSize: 11
-    artistFontFamily: ""
-    artistFontWeight: ""
-    artistFontStyle: ""
+    artistFontFamily: ''
+    artistFontWeight: ''
+    artistFontStyle: ''
     artistCharacterSpacing: 0
   AlbumArtDisplaySettings:
     albumArtEmptyBehavior: show_icon
@@ -104,7 +104,7 @@ AppearanceSettings:
     pauseOverlayIconSize: 16
     pauseOverlayOpacity: 60
     albumArtOpacity: 100
-    albumArtCornerRadius: "4"
+    albumArtCornerRadius: '4'
     showAppIcon: 1
     appIconCorner: bottom_right
     appIconSize: 10
@@ -167,7 +167,7 @@ ContextMenuSettings:
   contextMenuIconColor: 0 0 0$255 255 255
   contextMenuIconOpacity: 100
 DebugSettings:
-  ignoredProcesses: ""
+  ignoredProcesses: ''
   enableTreeDump: 0
   showDebugBorders: 0
   showMiniPlayerBorder: 0

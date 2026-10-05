@@ -1,0 +1,14 @@
+/**
+ * Extend to add a custom CSS theme
+ */
+export declare abstract class Theme {
+    name: string;
+    /**
+     * Complete CSS stylesheet
+     */
+    css: string;
+    terminalBackground: string;
+    macOSWindowButtonsInsetX?: number;
+    macOSWindowButtonsInsetY?: number;
+    followsColorScheme?: boolean;
+}
