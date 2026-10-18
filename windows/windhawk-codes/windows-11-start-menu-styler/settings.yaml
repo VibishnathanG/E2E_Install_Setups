@@ -1,15 +1,15 @@
 theme: TintedGlass
-disableNewStartMenuLayout: ''
+disableNewStartMenuLayout: ""
 styleConstants:
-  - ''
+  - ""
 controlStyles:
-  - target: ''
+  - target: ""
     styles:
-      - ''
+      - ""
 themeResourceVariables:
-  - ''
+  - ""
 webContentStyles:
-  - target: ''
+  - target: ""
     styles:
-      - ''
-webContentCustomJs: ''
+      - ""
+webContentCustomJs: ""

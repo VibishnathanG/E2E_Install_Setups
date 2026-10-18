@@ -5,50 +5,50 @@ MainSettings:
     playerWidth: 0 220
     playerHeight: 40 40
     playerMargin: 0 0
-    autoSwitchSession: 1
-    mirrorLayout: 0
-    fullHeightHitArea: 1
+    autoSwitchSession: true
+    mirrorLayout: false
+    fullHeightHitArea: true
   AlbumArtSetting:
-    showAlbumArt: 1
-    albumArtWidth: 30 60
-    albumArtHeight: 30 30
+    showAlbumArt: true
+    albumArtWidth: 22 30
+    albumArtHeight: 22 22
     albumArtMargin: 0 0
   TextAreaSetting:
-    showTrackTitle: 1
-    showTrackArtist: 1
-    textAreaWidth: 0 120
+    showTrackTitle: true
+    showTrackArtist: true
+    textAreaWidth: 0 110
     textAreaHeight: 0 0
-    textAreaMargin: 10 0
+    textAreaMargin: 5 0
     textSpacing: 0
-    enableTitleScrolling: 0
-    enableArtistScrolling: 0
+    enableTitleScrolling: false
+    enableArtistScrolling: false
     scrollSpeed: 1
     scrollPauseDuration: 1000
     scrollMode: loop
     loopGap: 40
-    swapTitleArtist: 0
+    swapTitleArtist: false
     emptyTitleText: 📻Untitled
     noMediaTitleText: Not Playing
-    emptyArtistText: ''
-    noMediaArtistText: ''
+    emptyArtistText: ""
+    noMediaArtistText: ""
   MediaButtonsSettings:
-    showMediaButtons: 1
+    showMediaButtons: true
     mediaButtons:
       - prev
       - play
       - next
     mediaButtonsMargin: 2 2
     buttonSize: 28
-    hideUnsupportedButtons: 0
+    hideUnsupportedButtons: false
   VisualizerFunctionsSettings:
-    vizEnabled: 1
+    vizEnabled: true
     vizPosition: left
     vizShape: mountain
     vizEQ: default
     vizAnchor: middle
     vizBarCountGap: 6 4
-    vizBarSize: 1 8
-    vizPadding: 0 0
+    vizBarSize: 1 6
+    vizPadding: 20 2
     vizSensitivity: 300
 AppearanceSettings:
   BackgroundStyleSettings:
@@ -63,15 +63,15 @@ AppearanceSettings:
     micaOpacity: 50
     blurOpacity: 65
     blurRadius: 11
-    cornerRadius: '40'
-    enablePlayerHoverEffect: auto
+    cornerRadius: "40"
+    enablePlayerHoverEffect: "off"
     enableMediaButtonsHoverEffect: auto
-    enableHoverAnimation: 1
+    enableHoverAnimation: true
   MediaButtonsStyleSettings:
     iconStyle: fluent_filled
     buttonSpacing: -5
     buttonIconSize: 12
-    buttonCornerRadius: '4'
+    buttonCornerRadius: "4"
     buttonColor: 0 0 0$255 255 255
     buttonColorOpacity: 100
   TitleTextStyleSettings:
@@ -79,18 +79,18 @@ AppearanceSettings:
     titleColorOpacity: 100
     titleFont: aptos
     titleFontSize: 12
-    titleFontFamily: ''
-    titleFontWeight: ''
-    titleFontStyle: ''
+    titleFontFamily: ""
+    titleFontWeight: ""
+    titleFontStyle: ""
     titleCharacterSpacing: 0
   ArtistTextStyleSettings:
     artistColor: 0 0 0$255 255 255
     artistColorOpacity: 80
     artistFont: segoe_ui_variable
     artistFontSize: 11
-    artistFontFamily: ''
-    artistFontWeight: ''
-    artistFontStyle: ''
+    artistFontFamily: ""
+    artistFontWeight: ""
+    artistFontStyle: ""
     artistCharacterSpacing: 0
   AlbumArtDisplaySettings:
     albumArtEmptyBehavior: show_icon
@@ -100,12 +100,12 @@ AppearanceSettings:
     emptyIconColor: 140 140 140
     emptyIconOpacity: 100
     albumArtQuality: medium
-    showPauseOverlay: 1
+    showPauseOverlay: true
     pauseOverlayIconSize: 16
     pauseOverlayOpacity: 60
     albumArtOpacity: 100
-    albumArtCornerRadius: '4'
-    showAppIcon: 1
+    albumArtCornerRadius: "4"
+    showAppIcon: true
     appIconCorner: bottom_right
     appIconSize: 10
   VisualizerStyleSettings:
@@ -124,10 +124,10 @@ PlayerMenuSettings:
     miniPlayerVerticalPlacement: bottom
     verticalDistanceFromScreenEdge: 0
     miniPlayerAnimation: auto
-  keepMiniPlayerOpen: 0
-  hideMediaSessionsList: 0
+  keepMiniPlayerOpen: false
+  hideMediaSessionsList: false
 BehaviorSettings:
-  disableAlbumArtClick: 0
+  disableAlbumArtClick: false
   ClickActionSettings:
     - object: player
       click: left_click
@@ -148,28 +148,28 @@ BehaviorSettings:
     - object: album_art
       click: mouse_wheel
       action: switch_sessions
-  hideWhenNoMedia: 1
-  hideFullscreen: 1
+  hideWhenNoMedia: true
+  hideFullscreen: true
   idleHideSeconds: 0
-  showFullTitleOnHover: 1
+  showFullTitleOnHover: true
 AnimationSettings:
-  enableSmoothPositionAnimation: 1
+  enableSmoothPositionAnimation: true
 NotificationSettings:
-  showSuccessNotification: 0
+  showSuccessNotification: false
 ContextMenuSettings:
   contextMenuItems:
     - switch_sessions
     - open_app
   repeatStyle: submenu
   shuffleStyle: toggle
-  showOpenWindhawk: 1
+  showOpenWindhawk: true
   contextMenuIconStyle: as_media_buttons
   contextMenuIconColor: 0 0 0$255 255 255
   contextMenuIconOpacity: 100
 DebugSettings:
-  ignoredProcesses: ''
-  enableTreeDump: 0
-  showDebugBorders: 0
-  showMiniPlayerBorder: 0
-  showLayoutAnchors: 0
-  showRestartButton: 0
+  ignoredProcesses: ""
+  enableTreeDump: false
+  showDebugBorders: false
+  showMiniPlayerBorder: false
+  showLayoutAnchors: false
+  showRestartButton: false

@@ -169,10 +169,10 @@ FrameworkElement FindChildByClassName(FrameworkElement element,
 // Animation math (cosine falloff)
 double CalculateScale(double distance, double radius, double maxScale) {
     if (distance > radius) return 1.0;
-
+    
     double t = distance / radius;
     double factor = 0.0;
-
+    
     switch (g_settings.animationType) {
         case 1: // Linear
             factor = 1.0 - t;
@@ -203,14 +203,14 @@ void ApplyAnimation(double mouseX, DockAnimationContext& ctx, double intensity, 
         if (!element) continue;
         double distance = 0.0;
         if (g_settings.taskbarLabelsMode) {
-            double iconStart = ctx.icons[i].originalCenterX;
-            double iconEnd = iconStart + ctx.icons[i].elementWidth;
+            double iconStart = ctx.icons[i].originalCenterX; 
+            double iconEnd = iconStart + ctx.icons[i].elementWidth; 
             if (mouseX < iconStart) {
-                distance = iconStart - mouseX;
+                distance = iconStart - mouseX; 
             } else if (mouseX > iconEnd) {
-                distance = mouseX - iconEnd;
+                distance = mouseX - iconEnd; 
             } else {
-                distance = 0.0;
+                distance = 0.0; 
             }
         } else {
             distance = std::abs(mouseX - ctx.icons[i].originalCenterX);
@@ -229,14 +229,14 @@ void ApplyAnimation(double mouseX, DockAnimationContext& ctx, double intensity, 
     double bounceTranslateY = 0.0;
 
     if (g_isBouncing && closestIconIndex != (size_t)-1 &&
-        minDistance < (g_settings.effectRadius / 2.0)) {
+        minDistance < (g_settings.effectRadius / 2.0)) {       
         auto elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
                             std::chrono::steady_clock::now() - g_bounceStartTime)
                             .count();
         double t = std::fmod(elapsed_ms, BOUNCE_PERIOD_MS) / BOUNCE_PERIOD_MS;
         double normalizedWave = std::sin(t * 3.14159);
         bounceScaleFactor = 1.0 + (normalizedWave * BOUNCE_SCALE_AMOUNT);
-        bounceTranslateY = normalizedWave * BOUNCE_TRANSLATE_Y;
+        bounceTranslateY = normalizedWave * BOUNCE_TRANSLATE_Y;       
         if (g_settings.mirrorAnimation) {
             bounceTranslateY *= -1.0;
         }
@@ -338,7 +338,7 @@ void OnTaskbarPointerMoved(void* pThis_key, Input::PointerRoutedEventArgs const&
         if (it == g_contexts.end()) return;
         auto& ctx = it->second;
         auto frame = ctx.taskbarFrame.get();
-        if (!frame) return;
+        if (!frame) return;       
         g_isMouseInside = true;
         g_activeContextKey = pThis_key;
         double mouseX = args.GetCurrentPoint(frame).Position().X;
@@ -1278,3 +1278,5 @@ void Wh_ModSettingsChanged() {
             nullptr);
     }
 }
+
+
