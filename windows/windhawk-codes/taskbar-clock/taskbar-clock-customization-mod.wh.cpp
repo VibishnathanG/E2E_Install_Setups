@@ -4283,11 +4283,11 @@ std::wstring FormatMetricBadge(std::wstring_view metricType, double value) {
         metricType == L"CPUTEMP" || metricType == L"gpu_temp" || metricType == L"gputemp" ||
         metricType == L"GPUTEMP") {
         if (value < 55.0) {
-            swprintf_s(buf, L"❄️ %.0f°C", value);
+            swprintf_s(buf, L"❄️ %.0f°c", value);
         } else if (value < 75.0) {
-            swprintf_s(buf, L"🌡️ %.0f°C", value);
+            swprintf_s(buf, L"🌡️ %.0f°c", value);
         } else {
-            swprintf_s(buf, L"🔥 %.0f°C", value);
+            swprintf_s(buf, L"🔥 %.0f°c", value);
         }
     } else if (metricType == L"battery") {
         SYSTEM_POWER_STATUS pwr{};
@@ -7659,3 +7659,4 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved) {
 
     return TRUE;
 }
+

@@ -1,4 +1,4 @@
-ShowSeconds: 0
+ShowSeconds: false
 TimeFormat: hh':'mm' 'tt
 DateFormat: ddd', 'dd'-'MMM'-'yy'
 DateLocale: ""
@@ -64,7 +64,7 @@ TooltipLineMode: replace
 Width: 310
 Height: 50
 MaxWidth: 0
-TextSpacing: -14
+TextSpacing: -15
 DataCollection:
   NetworkMetricsFormat: mbs
   NetworkMetricsFixedDecimals: -1
@@ -81,7 +81,7 @@ MediaPlayer:
   MaxLength: 40
   MediaInfoFormat: "%media_title%"
   NoMediaText: Nothing playing
-  RemoveBrackets: 1
+  RemoveBrackets: true
 WebContentWeatherLocation: ""
 WebContentWeatherFormat: "%c 🌡️%t 🌬️%w"
 WebContentWeatherUnits: autoDetect
@@ -165,18 +165,18 @@ WebContentsUpdateInterval: 120
 TimeZones:
   - ""
 TimeStyle:
-  Hidden: 0
+  Hidden: false
   TextColor: "#F0F4FF"
   TextAlignment: Center
-  FontSize: 15
+  FontSize: 13
   FontFamily: Segoe UI Variable Display
   FontWeight: SemiBold
   FontStyle: ""
   FontStretch: ""
   CharacterSpacing: 0
-  LineHeight: 14
+  LineHeight: 17
 DateStyle:
-  Hidden: 1
+  Hidden: true
   TextColor: ""
   TextAlignment: ""
   FontSize: 0
@@ -187,17 +187,17 @@ DateStyle:
   CharacterSpacing: 0
   LineHeight: 0
 ContainerStyle:
-  Enable: 1
+  Enable: true
   BackgroundColor: "#171a1a"
   BorderColor: "#2b2c2e"
   BorderThickness: 2
   CornerRadius: 20
-  Height: 35
+  Height: 40
   Width: 305
   PaddingLeft: 1
   PaddingTop: 1
   PaddingRight: 1
-  PaddingBottom: 2
-  IgnoreSystemPadding: 1
-  GlassyFinish: 1
-oldTaskbarOnWin11: 0
+  PaddingBottom: 1
+  IgnoreSystemPadding: true
+  GlassyFinish: true
+oldTaskbarOnWin11: false
