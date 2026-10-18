@@ -64,7 +64,7 @@ AppearanceSettings:
     blurOpacity: 65
     blurRadius: 11
     cornerRadius: "40"
-    enablePlayerHoverEffect: "off"
+    enablePlayerHoverEffect: auto
     enableMediaButtonsHoverEffect: auto
     enableHoverAnimation: true
   MediaButtonsStyleSettings:
@@ -114,12 +114,12 @@ AppearanceSettings:
     vizColor1: 30 215 96
     vizColor2: 0 180 255
 PlayerMenuSettings:
-  placementMode: near
+  placementMode: screen
   PlayerMenuSettingsNear:
     miniPlayerHorizontalOffsetNear: 0
     miniPlayerVerticalPlacementNear: bottom
   PlayerMenuSettingsScreen:
-    miniPlayerHorizontalPlacement: left
+    miniPlayerHorizontalPlacement: center
     horizontalDistanceFromScreenEdge: 0
     miniPlayerVerticalPlacement: bottom
     verticalDistanceFromScreenEdge: 0
@@ -160,10 +160,13 @@ ContextMenuSettings:
   contextMenuItems:
     - switch_sessions
     - open_app
+    - repeat
+    - forward
+    - rewind
   repeatStyle: submenu
   shuffleStyle: toggle
   showOpenWindhawk: true
-  contextMenuIconStyle: as_media_buttons
+  contextMenuIconStyle: fluent_filled
   contextMenuIconColor: 0 0 0$255 255 255
   contextMenuIconOpacity: 100
 DebugSettings:
